@@ -1,0 +1,30 @@
+name: deepfilter_test
+description: "DeepFilterNet noise suppression test app"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_rust_bridge: 2.11.1
+  permission_handler: ^11.3.0
+  path_provider: ^2.1.0
+  rust_lib_deepfilter_test:
+    path: rust_builder
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  integration_test:
+    sdk: flutter
+  ffigen: ^9.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

@@ -1,0 +1,77 @@
+# Rust
+**/target/
+**/*.rs.bk
+Cargo.lock
+
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/.pub-cache/
+flutter_app/.pub/
+flutter_app/build/
+flutter_app/.metadata
+
+# Android
+flutter_app/android/.gradle/
+flutter_app/android/app/build/
+flutter_app/android/build/
+flutter_app/android/local.properties
+flutter_app/android/*.iml
+flutter_app/android/.idea/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# iOS
+flutter_app/ios/.symlinks/
+flutter_app/ios/Pods/
+flutter_app/ios/Flutter/Flutter.framework
+flutter_app/ios/Flutter/Flutter.podspec
+flutter_app/ios/Flutter/Generated.xcconfig
+flutter_app/ios/Flutter/app.flx
+flutter_app/ios/Flutter/flutter_assets/
+flutter_app/ios/ServiceDefinitions.json
+flutter_app/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+flutter_app/macos/Flutter/GeneratedPluginRegistrant.swift
+flutter_app/macos/Flutter/ephemeral/
+
+# Windows
+flutter_app/windows/flutter/generated_plugin_registrant.cc
+flutter_app/windows/flutter/generated_plugin_registrant.h
+flutter_app/windows/flutter/generated_plugins.cmake
+
+# Linux
+flutter_app/linux/flutter/generated_plugin_registrant.cc
+flutter_app/linux/flutter/generated_plugin_registrant.h
+flutter_app/linux/flutter/generated_plugins.cmake
+
+# Web
+flutter_app/web/favicon.png
+flutter_app/web/icons/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated Dart/FRB files (keep these in git for easier builds)
+# flutter_app/lib/src/rust/
+
+# Compiled native libraries (rebuild from source)
+flutter_app/android/app/src/main/jniLibs/**/*.so
+
+# Model files (large binary - track with Git LFS or download separately)
+# Uncomment if not using Git LFS:
+# models/*.onnx
+# flutter_app/assets/*.onnx
+
+# Logs
+*.log

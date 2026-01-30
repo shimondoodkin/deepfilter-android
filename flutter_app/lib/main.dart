@@ -1,0 +1,338 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:async';
+
+import 'src/rust/api.dart';
+import 'src/rust/frb_generated.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init();
+  runApp(const DeepFilterApp());
+}
+
+class DeepFilterApp extends StatelessWidget {
+  const DeepFilterApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'DeepFilter Test',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isInitialized = false;
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  String _statusText = 'Initializing...';
+  String? _lastRecordedFile;
+  int _recordingDuration = 0;
+  Timer? _statusTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      // Request microphone permission
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        setState(() {
+          _statusText = 'Microphone permission denied';
+        });
+        return;
+      }
+
+      // Load DeepFilter model from assets
+      setState(() {
+        _statusText = 'Loading DeepFilter model...';
+      });
+
+      final modelData = await rootBundle.load('assets/DeepFilterNet3_onnx_mobile.tar.gz');
+      await initEngine(modelData: modelData.buffer.asUint8List());
+
+      setState(() {
+        _isInitialized = true;
+        _statusText = 'Ready to record';
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Initialization failed: $e';
+      });
+    }
+  }
+
+  Future<void> _startRecording() async {
+    if (!_isInitialized || _isRecording) return;
+
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = '${dir.path}/recording_$timestamp.wav';
+
+      await startRecording(outputPath: filePath);
+
+      setState(() {
+        _isRecording = true;
+        _lastRecordedFile = filePath;
+        _recordingDuration = 0;
+        _statusText = 'Recording...';
+      });
+
+      // Start status update timer
+      _statusTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+        _updateStatus();
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Failed to start recording: $e';
+      });
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+
+    _statusTimer?.cancel();
+
+    try {
+      final path = await stopRecording();
+      setState(() {
+        _isRecording = false;
+        _lastRecordedFile = path;
+        _statusText = 'Recording saved: ${path.split('/').last}';
+      });
+    } catch (e) {
+      setState(() {
+        _isRecording = false;
+        _statusText = 'Failed to stop recording: $e';
+      });
+    }
+  }
+
+  Future<void> _startPlayback() async {
+    if (_lastRecordedFile == null || _isPlaying || _isRecording) return;
+
+    try {
+      await startPlayback(filePath: _lastRecordedFile!);
+
+      setState(() {
+        _isPlaying = true;
+        _statusText = 'Playing...';
+      });
+
+      // Monitor playback status
+      _statusTimer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
+        final finished = await isPlaybackFinished();
+        if (finished) {
+          _statusTimer?.cancel();
+          setState(() {
+            _isPlaying = false;
+            _statusText = 'Playback finished';
+          });
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Failed to start playback: $e';
+      });
+    }
+  }
+
+  Future<void> _stopPlayback() async {
+    if (!_isPlaying) return;
+
+    _statusTimer?.cancel();
+
+    try {
+      await stopPlayback();
+      setState(() {
+        _isPlaying = false;
+        _statusText = 'Playback stopped';
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Failed to stop playback: $e';
+      });
+    }
+  }
+
+  void _updateStatus() async {
+    try {
+      final status = await getStatus();
+      setState(() {
+        _recordingDuration = status.durationMs.toInt();
+      });
+    } catch (e) {
+      // Ignore status update errors
+    }
+  }
+
+  String _formatDuration(int ms) {
+    final seconds = (ms / 1000).floor();
+    final minutes = (seconds / 60).floor();
+    final secs = seconds % 60;
+    final millis = (ms % 1000) ~/ 100;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}.$millis';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('DeepFilter Test'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Status indicator
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isRecording
+                      ? Colors.red.withOpacity(0.2)
+                      : _isPlaying
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.grey.withOpacity(0.1),
+                  border: Border.all(
+                    color: _isRecording
+                        ? Colors.red
+                        : _isPlaying
+                            ? Colors.green
+                            : Colors.grey,
+                    width: 4,
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _isRecording
+                            ? Icons.mic
+                            : _isPlaying
+                                ? Icons.volume_up
+                                : Icons.mic_none,
+                        size: 64,
+                        color: _isRecording
+                            ? Colors.red
+                            : _isPlaying
+                                ? Colors.green
+                                : Colors.grey,
+                      ),
+                      if (_isRecording) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _formatDuration(_recordingDuration),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Status text
+              Text(
+                _statusText,
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 48),
+
+              // Record button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: !_isInitialized || _isPlaying
+                        ? null
+                        : _isRecording
+                            ? _stopRecording
+                            : _startRecording,
+                    icon: Icon(_isRecording ? Icons.stop : Icons.fiber_manual_record),
+                    label: Text(_isRecording ? 'Stop' : 'Record'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isRecording ? Colors.red : null,
+                      foregroundColor: _isRecording ? Colors.white : null,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: _lastRecordedFile == null || _isRecording
+                        ? null
+                        : _isPlaying
+                            ? _stopPlayback
+                            : _startPlayback,
+                    icon: Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
+                    label: Text(_isPlaying ? 'Stop' : 'Play'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isPlaying ? Colors.green : null,
+                      foregroundColor: _isPlaying ? Colors.white : null,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+
+              // Info text
+              Text(
+                'Audio is processed with DeepFilterNet3\nfor real-time noise suppression',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

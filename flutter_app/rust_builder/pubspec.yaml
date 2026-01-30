@@ -1,0 +1,12 @@
+name: rust_lib_deepfilter_test
+description: Rust library for DeepFilter audio processing
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_rust_bridge: ^2.9.0
