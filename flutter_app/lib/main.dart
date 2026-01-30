@@ -114,7 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _statusText = 'Recording...';
       });
 
-      // Start status update timer
+      // Switch to faster updates during recording
+      _statusTimer?.cancel();
       _statusTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
         _updateStatus();
       });
@@ -137,10 +138,20 @@ class _HomeScreenState extends State<HomeScreen> {
         _lastRecordedFile = path;
         _statusText = 'Recording saved: ${path.split('/').last}';
       });
+
+      // Restart slower metrics timer
+      _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+        _updateStatus();
+      });
     } catch (e) {
       setState(() {
         _isRecording = false;
         _statusText = 'Failed to stop recording: $e';
+      });
+
+      // Restart metrics timer even on error
+      _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+        _updateStatus();
       });
     }
   }
@@ -275,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('DeepFilter Test'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
