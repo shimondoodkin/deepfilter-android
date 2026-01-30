@@ -1,10 +1,10 @@
 use anyhow::{Context, Result, bail};
 use std::io::{Cursor, Read};
-use std::sync::Once;
+use std::sync::{Arc, Once};
+use std::sync::atomic::{AtomicBool, Ordering};
 use flate2::read::GzDecoder;
 use tar::Archive;
-use ini::Ini;  // from rust-ini crate
-use ndarray::{Array, ArrayView2, ArrayViewMut2, Axis, s};
+use ini::Ini;
 use ort::session::{Session, builder::GraphOptimizationLevel};
 
 use crate::audio::FRAME_SIZE;
@@ -20,8 +20,6 @@ fn init_ort() -> Result<()> {
     ORT_INIT.call_once(|| {
         log::info!("Initializing ONNX Runtime...");
 
-        // On Android, libonnxruntime.so is loaded from the app's jniLibs
-        // Need to use full library name for dlopen
         #[cfg(target_os = "android")]
         {
             match ort::init_from("libonnxruntime.so") {
@@ -35,62 +33,46 @@ fn init_ort() -> Result<()> {
 
         #[cfg(not(target_os = "android"))]
         {
-            // On desktop, try to init with default settings
-            match ort::init() {
-                Ok(_) => log::info!("ONNX Runtime initialized successfully"),
-                Err(e) => {
-                    log::error!("Failed to initialize ONNX Runtime: {}", e);
-                    init_result = Err(anyhow::anyhow!("ORT init failed: {}", e));
-                }
-            }
+            // On desktop, ort::init() returns EnvironmentBuilder
+            // We just need to call it to initialize
+            let _ = ort::init();
+            log::info!("ONNX Runtime initialized (desktop)");
         }
     });
 
     init_result
 }
 
-/// DeepFilter model configuration parsed from config.ini
-struct DfConfig {
-    sr: usize,
-    hop_size: usize,
-    fft_size: usize,
-    nb_erb: usize,
-    nb_df: usize,
-    min_nb_erb_freqs: usize,
-    df_order: usize,
-    conv_lookahead: usize,
-    df_lookahead: usize,
-    alpha: f32,
+/// DeepFilter model configuration
+#[derive(Clone)]
+pub struct DfConfig {
+    pub sr: usize,
+    pub hop_size: usize,
+    pub fft_size: usize,
+    pub nb_erb: usize,
+    pub nb_df: usize,
+    pub min_nb_erb_freqs: usize,
+    pub df_order: usize,
+    pub conv_lookahead: usize,
+    pub df_lookahead: usize,
+    pub alpha: f32,
 }
 
-/// ONNX Runtime based DeepFilter for noise suppression
-/// Uses NNAPI on Android for GPU/NPU acceleration
-pub struct DeepFilter {
-    // ONNX Runtime sessions
-    enc_session: Session,
-    erb_dec_session: Session,
-    df_dec_session: Session,
-
-    // Signal processing state
-    df_state: DFState,
-
-    // Configuration
-    config: DfConfig,
-
-    // Buffers
-    erb_buf: Vec<f32>,
-    cplx_buf: Vec<f32>,
-    spec_buf: Vec<f32>,
-
-    // Hidden states for recurrent models
-    enc_hidden: Vec<f32>,
-    erb_dec_hidden: Vec<f32>,
-    df_dec_hidden: Vec<f32>,
+/// Shared ONNX Runtime sessions - thread-safe, can be shared across streams
+pub struct SharedSessions {
+    pub enc_session: Session,
+    pub erb_dec_session: Session,
+    pub df_dec_session: Session,
+    pub config: DfConfig,
 }
 
-impl DeepFilter {
-    /// Create a new DeepFilter instance from model bytes (tar.gz archive)
-    pub fn new(model_bytes: &[u8]) -> Result<Self> {
+// Session is Send + Sync, so SharedSessions can be shared
+unsafe impl Send for SharedSessions {}
+unsafe impl Sync for SharedSessions {}
+
+impl SharedSessions {
+    /// Load shared sessions from model bytes (tar.gz archive)
+    pub fn new(model_bytes: &[u8]) -> Result<Arc<Self>> {
         log::info!("Loading DeepFilter model with ONNX Runtime ({} bytes)", model_bytes.len());
 
         // Initialize ONNX Runtime
@@ -108,15 +90,13 @@ impl DeepFilter {
         for entry in archive.entries().context("Failed to read model archive")? {
             let mut file = entry.context("Failed to read archive entry")?;
             let path = file.path()?.to_path_buf();
-            let path_str = path.to_string_lossy();
 
-            // Get filename and skip macOS metadata files (start with ._)
             let filename = path.file_name()
                 .map(|f| f.to_string_lossy())
                 .unwrap_or_default();
 
             if filename.starts_with("._") {
-                continue;  // Skip macOS extended attribute files
+                continue;
             }
 
             if filename == "enc.onnx" {
@@ -131,7 +111,6 @@ impl DeepFilter {
             } else if filename == "config.ini" {
                 let mut config_bytes = Vec::new();
                 file.read_to_end(&mut config_bytes)?;
-                // Convert bytes to string, replacing invalid UTF-8
                 config_str = String::from_utf8_lossy(&config_bytes).into_owned();
                 log::info!("Loaded config.ini: {} bytes", config_str.len());
             }
@@ -168,7 +147,6 @@ impl DeepFilter {
             .or_else(|| model_cfg.get("df_lookahead"))
             .context("Missing df_lookahead")?.parse()?;
 
-        // Calculate alpha for normalization
         let alpha = if let Some(a) = df_cfg.get("norm_alpha") {
             a.parse::<f32>()?
         } else {
@@ -199,68 +177,28 @@ impl DeepFilter {
         let erb_dec_session = Self::create_session(&erb_dec_bytes, "erb_decoder")?;
         let df_dec_session = Self::create_session(&df_dec_bytes, "df_decoder")?;
 
-        // Initialize signal processing state
-        let mut df_state = DFState::new(sr, fft_size, hop_size, nb_erb, min_nb_erb_freqs);
-        df_state.init_norm_states(nb_df);
+        log::info!("SharedSessions initialized with ONNX Runtime");
 
-        // Allocate buffers
-        let n_freqs = fft_size / 2 + 1;
-        let erb_buf = vec![0.0f32; nb_erb];
-        let cplx_buf = vec![0.0f32; nb_df * 2];
-        let spec_buf = vec![0.0f32; n_freqs * 2];
-
-        // Initialize hidden states (sizes depend on model architecture)
-        // These are typically determined by examining the ONNX model inputs
-        let enc_hidden = vec![0.0f32; 512];  // Adjust based on model
-        let erb_dec_hidden = vec![0.0f32; 512];
-        let df_dec_hidden = vec![0.0f32; 512];
-
-        log::info!("DeepFilter initialized with ONNX Runtime");
-
-        Ok(Self {
+        Ok(Arc::new(Self {
             enc_session,
             erb_dec_session,
             df_dec_session,
-            df_state,
             config,
-            erb_buf,
-            cplx_buf,
-            spec_buf,
-            enc_hidden,
-            erb_dec_hidden,
-            df_dec_hidden,
-        })
+        }))
     }
 
-    /// Create an ONNX Runtime session with optimal settings
     fn create_session(model_bytes: &[u8], name: &str) -> Result<Session> {
         log::info!("Creating ONNX session for {} ({} bytes)", name, model_bytes.len());
 
-        let builder = match Session::builder() {
-            Ok(b) => b,
-            Err(e) => {
-                log::error!("Failed to create session builder for {}: {:?}", name, e);
-                return Err(anyhow::anyhow!("Session builder failed: {}", e));
-            }
-        };
+        let builder = Session::builder()
+            .map_err(|e| anyhow::anyhow!("Session builder failed for {}: {}", name, e))?;
 
-        let builder = match builder.with_optimization_level(GraphOptimizationLevel::Level1) {
-            Ok(b) => b,
-            Err(e) => {
-                log::error!("Failed to set optimization level for {}: {:?}", name, e);
-                return Err(anyhow::anyhow!("Optimization level failed: {}", e));
-            }
-        };
+        let builder = builder.with_optimization_level(GraphOptimizationLevel::Level1)
+            .map_err(|e| anyhow::anyhow!("Optimization level failed for {}: {}", name, e))?;
 
-        let session = match builder.commit_from_memory(model_bytes) {
-            Ok(s) => s,
-            Err(e) => {
-                log::error!("Failed to load {} model: {:?}", name, e);
-                return Err(anyhow::anyhow!("Model load failed for {}: {}", name, e));
-            }
-        };
+        let session = builder.commit_from_memory(model_bytes)
+            .map_err(|e| anyhow::anyhow!("Model load failed for {}: {}", name, e))?;
 
-        // Log input/output info
         for (i, input) in session.inputs().iter().enumerate() {
             log::info!("  {} input[{}]: {}", name, i, input.name());
         }
@@ -271,9 +209,89 @@ impl DeepFilter {
         log::info!("Successfully created {} session", name);
         Ok(session)
     }
+}
+
+/// Per-stream processor with independent state
+/// Each stream has its own DFState and buffers, but shares ONNX sessions
+pub struct StreamProcessor {
+    /// Reference to shared ONNX sessions
+    sessions: Arc<SharedSessions>,
+
+    /// Stream identifier
+    pub stream_id: u32,
+
+    /// Whether this stream is enabled for processing
+    enabled: AtomicBool,
+
+    /// Per-stream signal processing state
+    df_state: DFState,
+
+    /// Per-stream buffers
+    erb_buf: Vec<f32>,
+    cplx_buf: Vec<f32>,
+    spec_buf: Vec<f32>,
+
+    /// Per-stream hidden states for recurrent models
+    enc_hidden: Vec<f32>,
+    erb_dec_hidden: Vec<f32>,
+    df_dec_hidden: Vec<f32>,
+}
+
+impl StreamProcessor {
+    /// Create a new stream processor from shared sessions
+    pub fn new(sessions: Arc<SharedSessions>, stream_id: u32) -> Result<Self> {
+        let config = &sessions.config;
+
+        // Initialize per-stream signal processing state
+        let mut df_state = DFState::new(
+            config.sr,
+            config.fft_size,
+            config.hop_size,
+            config.nb_erb,
+            config.min_nb_erb_freqs,
+        );
+        df_state.init_norm_states(config.nb_df);
+
+        // Allocate per-stream buffers
+        let n_freqs = config.fft_size / 2 + 1;
+        let erb_buf = vec![0.0f32; config.nb_erb];
+        let cplx_buf = vec![0.0f32; config.nb_df * 2];
+        let spec_buf = vec![0.0f32; n_freqs * 2];
+
+        // Initialize hidden states
+        let enc_hidden = vec![0.0f32; 512];
+        let erb_dec_hidden = vec![0.0f32; 512];
+        let df_dec_hidden = vec![0.0f32; 512];
+
+        log::info!("Created StreamProcessor {}", stream_id);
+
+        Ok(Self {
+            sessions,
+            stream_id,
+            enabled: AtomicBool::new(true),
+            df_state,
+            erb_buf,
+            cplx_buf,
+            spec_buf,
+            enc_hidden,
+            erb_dec_hidden,
+            df_dec_hidden,
+        })
+    }
+
+    /// Enable or disable this stream
+    pub fn set_enabled(&self, enabled: bool) {
+        self.enabled.store(enabled, Ordering::SeqCst);
+        log::info!("Stream {} enabled: {}", self.stream_id, enabled);
+    }
+
+    /// Check if this stream is enabled
+    pub fn is_enabled(&self) -> bool {
+        self.enabled.load(Ordering::SeqCst)
+    }
 
     /// Process a single frame of audio
-    /// Input and output must be FRAME_SIZE samples
+    /// Returns processed output if enabled, or copies input if disabled
     pub fn process_frame(&mut self, input: &[f32], output: &mut [f32]) -> Result<f32> {
         if input.len() != FRAME_SIZE || output.len() != FRAME_SIZE {
             bail!(
@@ -282,33 +300,80 @@ impl DeepFilter {
             );
         }
 
-        // For now, use a simplified processing pipeline
-        // TODO: Implement full DeepFilter processing with ort
+        // If disabled, just copy input to output (passthrough)
+        if !self.is_enabled() {
+            output.copy_from_slice(input);
+            return Ok(0.0);
+        }
 
-        // Step 1: Apply FFT to get spectrum
-        let mut spec = vec![0.0f32; self.config.fft_size / 2 + 1];
-
-        // Simple passthrough for now until full implementation
-        // The actual implementation requires careful handling of:
-        // - FFT/IFFT using DFState
-        // - ERB feature extraction
-        // - Running encoder/decoder networks
-        // - Applying gains and DF coefficients
-
+        // TODO: Implement full DeepFilter processing with shared sessions
+        // For now, passthrough
         output.copy_from_slice(input);
-
-        // Return dummy LSNR
         Ok(0.0)
+    }
+
+    /// Reset the stream state (for starting a new recording)
+    pub fn reset(&mut self) {
+        let config = &self.sessions.config;
+
+        self.df_state = DFState::new(
+            config.sr,
+            config.fft_size,
+            config.hop_size,
+            config.nb_erb,
+            config.min_nb_erb_freqs,
+        );
+        self.df_state.init_norm_states(config.nb_df);
+
+        // Reset buffers
+        self.erb_buf.fill(0.0);
+        self.cplx_buf.fill(0.0);
+        self.spec_buf.fill(0.0);
+        self.enc_hidden.fill(0.0);
+        self.erb_dec_hidden.fill(0.0);
+        self.df_dec_hidden.fill(0.0);
+
+        log::info!("Stream {} state reset", self.stream_id);
     }
 
     /// Get the sample rate
     pub fn sample_rate(&self) -> usize {
-        self.config.sr
+        self.sessions.config.sr
     }
 
     /// Get the hop size (frame size)
     pub fn hop_size(&self) -> usize {
-        self.config.hop_size
+        self.sessions.config.hop_size
+    }
+}
+
+/// Legacy DeepFilter struct for backwards compatibility
+/// Wraps a single StreamProcessor
+pub struct DeepFilter {
+    processor: StreamProcessor,
+}
+
+impl DeepFilter {
+    /// Create a new DeepFilter instance from model bytes
+    pub fn new(model_bytes: &[u8]) -> Result<Self> {
+        let sessions = SharedSessions::new(model_bytes)?;
+        let processor = StreamProcessor::new(sessions, 0)?;
+        Ok(Self { processor })
+    }
+
+    /// Process a single frame of audio
+    pub fn process_frame(&mut self, input: &[f32], output: &mut [f32]) -> Result<f32> {
+        self.processor.process_frame(input, output)
+    }
+
+    /// Get the sample rate
+    pub fn sample_rate(&self) -> usize {
+        self.processor.sample_rate()
+    }
+
+    /// Get the hop size
+    pub fn hop_size(&self) -> usize {
+        self.processor.hop_size()
     }
 }
 

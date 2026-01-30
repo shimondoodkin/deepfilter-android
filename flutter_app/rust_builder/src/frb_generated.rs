@@ -178,6 +178,86 @@ fn wire__crate__api__stop_recording_impl(port_: flutter_rust_bridge::for_generat
         },
     )
 }
+fn wire__crate__api__set_stream_a_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    enabled: impl CstDecode<bool>,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_stream_a_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_enabled = enabled.cst_decode();
+            move |context| {
+                transform_result_dco::<_, _, String>((move || {
+                    let output_ok = crate::api::set_stream_a_enabled(api_enabled)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__set_stream_b_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    enabled: impl CstDecode<bool>,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_stream_b_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_enabled = enabled.cst_decode();
+            move |context| {
+                transform_result_dco::<_, _, String>((move || {
+                    let output_ok = crate::api::set_stream_b_enabled(api_enabled)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__is_stream_a_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "is_stream_a_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_a_enabled())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__is_stream_b_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "is_stream_b_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_b_enabled())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -243,11 +323,15 @@ impl SseDecode for crate::api::RecordingStatus {
         let mut var_isRecording = <bool>::sse_decode(deserializer);
         let mut var_isPlaying = <bool>::sse_decode(deserializer);
         let mut var_durationMs = <u64>::sse_decode(deserializer);
+        let mut var_streamAEnabled = <bool>::sse_decode(deserializer);
+        let mut var_streamBEnabled = <bool>::sse_decode(deserializer);
         let mut var_error = <Option<String>>::sse_decode(deserializer);
         return crate::api::RecordingStatus {
             is_recording: var_isRecording,
             is_playing: var_isPlaying,
             duration_ms: var_durationMs,
+            stream_a_enabled: var_streamAEnabled,
+            stream_b_enabled: var_streamBEnabled,
             error: var_error,
         };
     }
@@ -367,6 +451,8 @@ impl SseEncode for crate::api::RecordingStatus {
         <bool>::sse_encode(self.is_recording, serializer);
         <bool>::sse_encode(self.is_playing, serializer);
         <u64>::sse_encode(self.duration_ms, serializer);
+        <bool>::sse_encode(self.stream_a_enabled, serializer);
+        <bool>::sse_encode(self.stream_b_enabled, serializer);
         <Option<String>>::sse_encode(self.error, serializer);
     }
 }
@@ -449,6 +535,8 @@ mod io {
                 is_recording: self.is_recording.cst_decode(),
                 is_playing: self.is_playing.cst_decode(),
                 duration_ms: self.duration_ms.cst_decode(),
+                stream_a_enabled: self.stream_a_enabled.cst_decode(),
+                stream_b_enabled: self.stream_b_enabled.cst_decode(),
                 error: self.error.cst_decode(),
             }
         }
@@ -459,6 +547,8 @@ mod io {
                 is_recording: Default::default(),
                 is_playing: Default::default(),
                 duration_ms: Default::default(),
+                stream_a_enabled: Default::default(),
+                stream_b_enabled: Default::default(),
                 error: core::ptr::null_mut(),
             }
         }
@@ -514,6 +604,32 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled(
+        port_: i64,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_a_enabled_impl(port_, enabled)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled(
+        port_: i64,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_b_enabled_impl(port_, enabled)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled(port_: i64) {
+        wire__crate__api__is_stream_a_enabled_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled(port_: i64) {
+        wire__crate__api__is_stream_b_enabled_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_deepfilter_test_cst_new_list_prim_u_8_loose(
         len: i32,
     ) -> *mut wire_cst_list_prim_u_8_loose {
@@ -553,6 +669,8 @@ mod io {
         is_recording: bool,
         is_playing: bool,
         duration_ms: u64,
+        stream_a_enabled: bool,
+        stream_b_enabled: bool,
         error: *mut wire_cst_list_prim_u_8_strict,
     }
 }

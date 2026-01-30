@@ -81,6 +81,14 @@ abstract class RustLibApi extends BaseApi {
 
   Future<bool> crateApiIsPlaybackFinished();
 
+  Future<bool> crateApiIsStreamAEnabled();
+
+  Future<bool> crateApiIsStreamBEnabled();
+
+  Future<void> crateApiSetStreamAEnabled({required bool enabled});
+
+  Future<void> crateApiSetStreamBEnabled({required bool enabled});
+
   Future<void> crateApiStartPlayback({required String filePath});
 
   Future<void> crateApiStartRecording({required String outputPath});
@@ -161,6 +169,92 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiIsPlaybackFinishedConstMeta =>
       const TaskConstMeta(debugName: "is_playback_finished", argNames: []);
+
+  @override
+  Future<bool> crateApiIsStreamAEnabled() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          return wire.wire__crate__api__is_stream_a_enabled(port_);
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_bool,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiIsStreamAEnabledConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiIsStreamAEnabledConstMeta =>
+      const TaskConstMeta(debugName: "is_stream_a_enabled", argNames: []);
+
+  @override
+  Future<bool> crateApiIsStreamBEnabled() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          return wire.wire__crate__api__is_stream_b_enabled(port_);
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_bool,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiIsStreamBEnabledConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiIsStreamBEnabledConstMeta =>
+      const TaskConstMeta(debugName: "is_stream_b_enabled", argNames: []);
+
+  @override
+  Future<void> crateApiSetStreamAEnabled({required bool enabled}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          var arg0 = cst_encode_bool(enabled);
+          return wire.wire__crate__api__set_stream_a_enabled(port_, arg0);
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_unit,
+          decodeErrorData: dco_decode_String,
+        ),
+        constMeta: kCrateApiSetStreamAEnabledConstMeta,
+        argValues: [enabled],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSetStreamAEnabledConstMeta =>
+      const TaskConstMeta(debugName: "set_stream_a_enabled", argNames: ["enabled"]);
+
+  @override
+  Future<void> crateApiSetStreamBEnabled({required bool enabled}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          var arg0 = cst_encode_bool(enabled);
+          return wire.wire__crate__api__set_stream_b_enabled(port_, arg0);
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_unit,
+          decodeErrorData: dco_decode_String,
+        ),
+        constMeta: kCrateApiSetStreamBEnabledConstMeta,
+        argValues: [enabled],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSetStreamBEnabledConstMeta =>
+      const TaskConstMeta(debugName: "set_stream_b_enabled", argNames: ["enabled"]);
 
   @override
   Future<void> crateApiStartPlayback({required String filePath}) {
@@ -284,13 +378,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RecordingStatus dco_decode_recording_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return RecordingStatus(
       isRecording: dco_decode_bool(arr[0]),
       isPlaying: dco_decode_bool(arr[1]),
       durationMs: dco_decode_u_64(arr[2]),
-      error: dco_decode_opt_String(arr[3]),
+      streamAEnabled: dco_decode_bool(arr[3]),
+      streamBEnabled: dco_decode_bool(arr[4]),
+      error: dco_decode_opt_String(arr[5]),
     );
   }
 
@@ -356,11 +452,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_isRecording = sse_decode_bool(deserializer);
     var var_isPlaying = sse_decode_bool(deserializer);
     var var_durationMs = sse_decode_u_64(deserializer);
+    var var_streamAEnabled = sse_decode_bool(deserializer);
+    var var_streamBEnabled = sse_decode_bool(deserializer);
     var var_error = sse_decode_opt_String(deserializer);
     return RecordingStatus(
       isRecording: var_isRecording,
       isPlaying: var_isPlaying,
       durationMs: var_durationMs,
+      streamAEnabled: var_streamAEnabled,
+      streamBEnabled: var_streamBEnabled,
       error: var_error,
     );
   }
@@ -459,6 +559,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.isRecording, serializer);
     sse_encode_bool(self.isPlaying, serializer);
     sse_encode_u_64(self.durationMs, serializer);
+    sse_encode_bool(self.streamAEnabled, serializer);
+    sse_encode_bool(self.streamBEnabled, serializer);
     sse_encode_opt_String(self.error, serializer);
   }
 

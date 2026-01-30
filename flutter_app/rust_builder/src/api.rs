@@ -8,6 +8,8 @@ pub struct RecordingStatus {
     pub is_recording: bool,
     pub is_playing: bool,
     pub duration_ms: u64,
+    pub stream_a_enabled: bool,
+    pub stream_b_enabled: bool,
     pub error: Option<String>,
 }
 
@@ -17,15 +19,42 @@ impl From<deepfilter_audio::api::RecordingStatus> for RecordingStatus {
             is_recording: s.is_recording,
             is_playing: s.is_playing,
             duration_ms: s.duration_ms,
+            stream_a_enabled: s.stream_a_enabled,
+            stream_b_enabled: s.stream_b_enabled,
             error: s.error,
         }
     }
 }
 
 /// Initialize the audio engine with the DeepFilter model
+/// Creates shared ONNX sessions and two independent stream processors
 #[frb]
 pub fn init_engine(model_data: Vec<u8>) -> Result<(), String> {
     deepfilter_audio::api::init_engine(model_data)
+}
+
+/// Enable or disable stream A
+#[frb]
+pub fn set_stream_a_enabled(enabled: bool) -> Result<(), String> {
+    deepfilter_audio::api::set_stream_a_enabled(enabled)
+}
+
+/// Enable or disable stream B
+#[frb]
+pub fn set_stream_b_enabled(enabled: bool) -> Result<(), String> {
+    deepfilter_audio::api::set_stream_b_enabled(enabled)
+}
+
+/// Check if stream A is enabled
+#[frb]
+pub fn is_stream_a_enabled() -> bool {
+    deepfilter_audio::api::is_stream_a_enabled()
+}
+
+/// Check if stream B is enabled
+#[frb]
+pub fn is_stream_b_enabled() -> bool {
+    deepfilter_audio::api::is_stream_b_enabled()
 }
 
 /// Start recording audio to the specified file path

@@ -33,17 +33,37 @@ Future<RecordingStatus> getStatus() => RustLib.instance.api.crateApiGetStatus();
 Future<bool> isPlaybackFinished() =>
     RustLib.instance.api.crateApiIsPlaybackFinished();
 
+/// Enable or disable stream A
+Future<void> setStreamAEnabled({required bool enabled}) =>
+    RustLib.instance.api.crateApiSetStreamAEnabled(enabled: enabled);
+
+/// Enable or disable stream B
+Future<void> setStreamBEnabled({required bool enabled}) =>
+    RustLib.instance.api.crateApiSetStreamBEnabled(enabled: enabled);
+
+/// Check if stream A is enabled
+Future<bool> isStreamAEnabled() =>
+    RustLib.instance.api.crateApiIsStreamAEnabled();
+
+/// Check if stream B is enabled
+Future<bool> isStreamBEnabled() =>
+    RustLib.instance.api.crateApiIsStreamBEnabled();
+
 /// Recording status for UI updates
 class RecordingStatus {
   final bool isRecording;
   final bool isPlaying;
   final BigInt durationMs;
+  final bool streamAEnabled;
+  final bool streamBEnabled;
   final String? error;
 
   const RecordingStatus({
     required this.isRecording,
     required this.isPlaying,
     required this.durationMs,
+    required this.streamAEnabled,
+    required this.streamBEnabled,
     this.error,
   });
 
@@ -52,6 +72,8 @@ class RecordingStatus {
       isRecording.hashCode ^
       isPlaying.hashCode ^
       durationMs.hashCode ^
+      streamAEnabled.hashCode ^
+      streamBEnabled.hashCode ^
       error.hashCode;
 
   @override
@@ -62,5 +84,7 @@ class RecordingStatus {
           isRecording == other.isRecording &&
           isPlaying == other.isPlaying &&
           durationMs == other.durationMs &&
+          streamAEnabled == other.streamAEnabled &&
+          streamBEnabled == other.streamBEnabled &&
           error == other.error;
 }

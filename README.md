@@ -8,6 +8,7 @@ Flutter app with Rust audio core to test DeepFilterNet3 noise suppression on And
 - DeepFilterNet3 neural network for noise suppression
 - Oboe-based audio recording/playback for low latency
 - Post-recording noise filtering with WAV output
+- **Dual parallel stream processing** with runtime enable/disable control
 
 ## Project Structure
 
@@ -128,11 +129,62 @@ Processing flow:
 3. DF Decoder → Filter coefficients
 4. Apply gains and DF → IFFT → Output
 
+### Dual Stream Architecture
+
+The app supports **two parallel processing streams** (A and B) that share the same ONNX Runtime sessions but maintain independent state:
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │           SharedSessions                │
+                    │  (Arc-wrapped, thread-safe ONNX Sessions)│
+                    │  - enc_session                          │
+                    │  - erb_dec_session                      │
+                    │  - df_dec_session                       │
+                    └──────────────┬──────────────────────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              │                    │                    │
+              ▼                    ▼                    ▼
+    ┌──────────────────┐ ┌──────────────────┐
+    │ StreamProcessor A│ │ StreamProcessor B│   ... (more streams possible)
+    │ - stream_id: 0   │ │ - stream_id: 1   │
+    │ - enabled: bool  │ │ - enabled: bool  │
+    │ - df_state       │ │ - df_state       │
+    │ - buffers        │ │ - buffers        │
+    │ - hidden states  │ │ - hidden states  │
+    └──────────────────┘ └──────────────────┘
+```
+
+**API Functions:**
+```dart
+// Enable/disable streams at runtime
+await setStreamAEnabled(enabled: true);
+await setStreamBEnabled(enabled: false);
+
+// Check stream status
+bool aEnabled = await isStreamAEnabled();
+bool bEnabled = await isStreamBEnabled();
+
+// Status includes stream states
+RecordingStatus status = await getStatus();
+print(status.streamAEnabled);  // true/false
+print(status.streamBEnabled);  // true/false
+```
+
+**Processing behavior:**
+- Both streams process the **same input** (mic audio)
+- Final output is the **average** of enabled streams
+- Disabled streams output passthrough (unprocessed audio)
+- Each stream maintains independent recurrent hidden states
+
+This enables A/B testing of DeepFilter with instant switching.
+
 ### Thread Safety
 
 - Global `Mutex<Option<T>>` storage for recorder/player
-- ONNX Runtime sessions are thread-safe
-- `unsafe impl Send` for Android-specific types (Oboe streams)
+- ONNX Runtime sessions are thread-safe via `Arc<SharedSessions>`
+- `unsafe impl Send + Sync` for audio types (Oboe/cpal streams)
+- Per-stream state isolation prevents interference
 
 ## Audio Configuration
 

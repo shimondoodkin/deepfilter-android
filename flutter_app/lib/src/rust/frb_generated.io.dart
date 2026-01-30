@@ -123,6 +123,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     wireObj.is_recording = cst_encode_bool(apiObj.isRecording);
     wireObj.is_playing = cst_encode_bool(apiObj.isPlaying);
     wireObj.duration_ms = cst_encode_u_64(apiObj.durationMs);
+    wireObj.stream_a_enabled = cst_encode_bool(apiObj.streamAEnabled);
+    wireObj.stream_b_enabled = cst_encode_bool(apiObj.streamBEnabled);
     wireObj.error = cst_encode_opt_String(apiObj.error);
   }
 
@@ -319,6 +321,52 @@ class RustLibWire implements BaseWire {
   late final _wire__crate__api__stop_recording =
       _wire__crate__api__stop_recordingPtr.asFunction<void Function(int)>();
 
+  void wire__crate__api__set_stream_a_enabled(int port_, bool enabled) {
+    return _wire__crate__api__set_stream_a_enabled(port_, enabled);
+  }
+
+  late final _wire__crate__api__set_stream_a_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+        'frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled',
+      );
+  late final _wire__crate__api__set_stream_a_enabled =
+      _wire__crate__api__set_stream_a_enabledPtr
+          .asFunction<void Function(int, bool)>();
+
+  void wire__crate__api__set_stream_b_enabled(int port_, bool enabled) {
+    return _wire__crate__api__set_stream_b_enabled(port_, enabled);
+  }
+
+  late final _wire__crate__api__set_stream_b_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+        'frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled',
+      );
+  late final _wire__crate__api__set_stream_b_enabled =
+      _wire__crate__api__set_stream_b_enabledPtr
+          .asFunction<void Function(int, bool)>();
+
+  void wire__crate__api__is_stream_a_enabled(int port_) {
+    return _wire__crate__api__is_stream_a_enabled(port_);
+  }
+
+  late final _wire__crate__api__is_stream_a_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+        'frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled',
+      );
+  late final _wire__crate__api__is_stream_a_enabled =
+      _wire__crate__api__is_stream_a_enabledPtr.asFunction<void Function(int)>();
+
+  void wire__crate__api__is_stream_b_enabled(int port_) {
+    return _wire__crate__api__is_stream_b_enabled(port_);
+  }
+
+  late final _wire__crate__api__is_stream_b_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+        'frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled',
+      );
+  late final _wire__crate__api__is_stream_b_enabled =
+      _wire__crate__api__is_stream_b_enabledPtr.asFunction<void Function(int)>();
+
   ffi.Pointer<wire_cst_list_prim_u_8_loose> cst_new_list_prim_u_8_loose(
     int len,
   ) {
@@ -392,6 +440,12 @@ final class wire_cst_recording_status extends ffi.Struct {
 
   @ffi.Uint64()
   external int duration_ms;
+
+  @ffi.Bool()
+  external bool stream_a_enabled;
+
+  @ffi.Bool()
+  external bool stream_b_enabled;
 
   external ffi.Pointer<wire_cst_list_prim_u_8_strict> error;
 }

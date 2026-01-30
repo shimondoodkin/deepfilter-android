@@ -44,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _lastRecordedFile;
   int _recordingDuration = 0;
   Timer? _statusTimer;
+  bool _streamAEnabled = true;
+  bool _streamBEnabled = true;
 
   @override
   void initState() {
@@ -187,9 +189,37 @@ class _HomeScreenState extends State<HomeScreen> {
       final status = await getStatus();
       setState(() {
         _recordingDuration = status.durationMs.toInt();
+        _streamAEnabled = status.streamAEnabled;
+        _streamBEnabled = status.streamBEnabled;
       });
     } catch (e) {
       // Ignore status update errors
+    }
+  }
+
+  Future<void> _toggleStreamA(bool enabled) async {
+    try {
+      await setStreamAEnabled(enabled: enabled);
+      setState(() {
+        _streamAEnabled = enabled;
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Failed to toggle stream A: $e';
+      });
+    }
+  }
+
+  Future<void> _toggleStreamB(bool enabled) async {
+    try {
+      await setStreamBEnabled(enabled: enabled);
+      setState(() {
+        _streamBEnabled = enabled;
+      });
+    } catch (e) {
+      setState(() {
+        _statusText = 'Failed to toggle stream B: $e';
+      });
     }
   }
 
@@ -320,6 +350,48 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 32),
+
+              // Stream controls
+              if (_isInitialized) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Dual Stream Controls',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Stream A'),
+                            Switch(
+                              value: _streamAEnabled,
+                              onChanged: _toggleStreamA,
+                            ),
+                            const SizedBox(width: 24),
+                            const Text('Stream B'),
+                            Switch(
+                              value: _streamBEnabled,
+                              onChanged: _toggleStreamB,
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Both streams process the same input.\nFinal output is the average of enabled streams.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Info text
               Text(

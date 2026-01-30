@@ -18,9 +18,12 @@ pub struct AudioRecorder {
     // We just track state through atomic flags
 }
 
-// AudioRecorder is now Send-safe on Android (no non-Send fields)
-#[cfg(target_os = "android")]
+// AudioRecorder is Send-safe because:
+// - On Android: no non-Send fields
+// - On desktop: cpal::Stream is not Send, but we only access it while holding the Mutex lock
 unsafe impl Send for AudioRecorder {}
+// AudioRecorder is Sync-safe because all access goes through a Mutex
+unsafe impl Sync for AudioRecorder {}
 
 impl AudioRecorder {
     pub fn new(output_path: String) -> Result<Self> {

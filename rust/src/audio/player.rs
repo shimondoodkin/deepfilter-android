@@ -15,9 +15,12 @@ pub struct AudioPlayer {
     // On Android, stream is managed via Oboe callbacks
 }
 
-// AudioPlayer is Send-safe on Android (no non-Send fields)
-#[cfg(target_os = "android")]
+// AudioPlayer is Send-safe because:
+// - On Android: no non-Send fields
+// - On desktop: cpal::Stream is not Send, but we only access it while holding the Mutex lock
 unsafe impl Send for AudioPlayer {}
+// AudioPlayer is Sync-safe because all access goes through a Mutex
+unsafe impl Sync for AudioPlayer {}
 
 impl AudioPlayer {
     pub fn new(file_path: &str) -> Result<Self> {
