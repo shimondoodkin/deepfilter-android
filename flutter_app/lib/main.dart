@@ -53,6 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Start metrics timer immediately
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      _updateMetrics();
+    });
     _initialize();
   }
 
@@ -86,7 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _statusText = 'Ready to record';
       });
 
-      // Start metrics update timer
+      // Switch to full status updates (includes recording duration)
+      _statusTimer?.cancel();
       _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
         _updateStatus();
       });
@@ -200,6 +205,19 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _statusText = 'Failed to stop playback: $e';
       });
+    }
+  }
+
+  void _updateMetrics() async {
+    try {
+      final metrics = await getSystemMetrics();
+      setState(() {
+        _cpuUsage = metrics.cpuUsagePercent;
+        _gpuUsage = metrics.gpuUsagePercent;
+        _nnapiAvailable = metrics.nnapiAvailable;
+      });
+    } catch (e) {
+      // Ignore metrics update errors
     }
   }
 
