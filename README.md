@@ -1,6 +1,13 @@
 # DeepFilterNet Test App
 
-Flutter app with Rust audio core to test DeepFilterNet3 noise suppression on Android.
+Flutter app with Rust audio core to test DeepFilterNet3 noise suppression on Android with GPU/NPU acceleration via ONNX Runtime + NNAPI.
+
+## Features
+
+- **ONNX Runtime with NNAPI** - GPU/NPU acceleration on Android 8.1+
+- DeepFilterNet3 neural network for noise suppression
+- Oboe-based audio recording/playback for low latency
+- Post-recording noise filtering with WAV output
 
 ## Project Structure
 
@@ -8,142 +15,189 @@ Flutter app with Rust audio core to test DeepFilterNet3 noise suppression on And
 deepfilter_test/
 ├── flutter_app/           # Flutter project
 │   ├── lib/main.dart      # Main app with record/play UI
-│   ├── assets/            # DeepFilterNet3 model
-│   ├── rust_builder/      # FRB Rust wrapper (bridges to deepfilter_audio)
-│   └── android/app/src/main/jniLibs/  # Compiled .so files
+│   ├── assets/            # DeepFilterNet3 model (.tar.gz)
+│   ├── rust_builder/      # FRB Rust wrapper
+│   └── android/app/src/main/jniLibs/  # Native libraries
+│       └── arm64-v8a/
+│           ├── librust_lib_deepfilter_test.so  # Rust code (2.5MB)
+│           ├── libonnxruntime.so               # ONNX Runtime (19MB)
+│           └── libc++_shared.so                # C++ runtime (1.8MB)
 ├── rust/                  # Rust audio core (deepfilter_audio crate)
 │   └── src/
 │       ├── api/           # Flutter API (audio_engine.rs)
-│       ├── audio/         # Audio recording/playback (Oboe for Android)
-│       ├── processing/    # DeepFilterNet wrapper
+│       ├── audio/         # Audio recording/playback (Oboe)
+│       ├── processing/    # DeepFilter with ONNX Runtime
 │       └── io/            # WAV file I/O
 └── models/                # Model files
 ```
 
 ## Prerequisites
 
-1. **Flutter SDK** - Install via snap: `sudo snap install flutter --classic`
-2. **Rust** - Install via rustup: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-3. **Android SDK + NDK** - Required for Android builds
-4. **cargo-ndk** - For cross-compiling to Android
+1. **Flutter SDK** - `sudo snap install flutter --classic`
+2. **Rust** - `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+3. **Android SDK + NDK 27+**
+4. **cargo-ndk** - `cargo install cargo-ndk`
 
-### Install Android SDK/NDK
-
-```bash
-# Install via Android Studio or command line
-# After installing, set environment variables:
-export ANDROID_SDK_ROOT=/opt/android-sdk
-export ANDROID_NDK_HOME=/opt/android-sdk/ndk/27.0.12077973
-```
-
-### Install Rust Android Targets
+### Install Android Targets
 
 ```bash
 source ~/.cargo/env
-rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
-cargo install cargo-ndk
+rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
 ```
 
 ## Build Commands
 
-### Quick Build (ARM64 only)
+### 1. Download ONNX Runtime for Android (one-time setup)
+
+**Important:** ort crate 2.0.0-rc.11 requires ONNX Runtime 1.23.x
 
 ```bash
-# 1. Build Rust library for Android
+# Download from Maven Central
+curl -sL "https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/1.23.0/onnxruntime-android-1.23.0.aar" -o /tmp/onnxruntime.aar
+
+# Extract .so files
+cd /tmp && unzip -o onnxruntime.aar "jni/*"
+
+# Copy to jniLibs (for each architecture you need)
+cp jni/arm64-v8a/libonnxruntime.so /path/to/flutter_app/android/app/src/main/jniLibs/arm64-v8a/
+cp jni/armeabi-v7a/libonnxruntime.so /path/to/flutter_app/android/app/src/main/jniLibs/armeabi-v7a/
+cp jni/x86_64/libonnxruntime.so /path/to/flutter_app/android/app/src/main/jniLibs/x86_64/
+```
+
+### 2. Build Rust Library
+
+```bash
 source ~/.cargo/env
 export ANDROID_NDK_HOME=/opt/android-sdk/ndk/27.0.12077973
+
 cd flutter_app/rust_builder
+
+# ARM64 only (most devices)
 cargo ndk -t arm64-v8a build --release
 
-# 2. Copy .so to jniLibs
+# Copy to jniLibs
 cp target/aarch64-linux-android/release/librust_lib_deepfilter_test.so \
    ../android/app/src/main/jniLibs/arm64-v8a/
+```
 
-# 3. Build Flutter APK
-cd ..
+### 3. Build Flutter APK
+
+```bash
+cd flutter_app
 flutter build apk --debug
 ```
 
-### Full Build (All architectures)
-
-```bash
-# Build for all Android architectures
-cd flutter_app/rust_builder
-cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 build --release
-
-# Copy all .so files
-cp target/aarch64-linux-android/release/librust_lib_deepfilter_test.so ../android/app/src/main/jniLibs/arm64-v8a/
-cp target/armv7-linux-androideabi/release/librust_lib_deepfilter_test.so ../android/app/src/main/jniLibs/armeabi-v7a/
-cp target/x86_64-linux-android/release/librust_lib_deepfilter_test.so ../android/app/src/main/jniLibs/x86_64/
-```
-
-### Regenerate Flutter-Rust Bridge Bindings
-
-Only needed if you modify the Rust API:
-
-```bash
-cargo install flutter_rust_bridge_codegen
-cd flutter_app
-flutter_rust_bridge_codegen generate
-```
-
-## One-Liner Build
+### One-Liner Build
 
 ```bash
 source ~/.cargo/env && \
 export ANDROID_NDK_HOME=/opt/android-sdk/ndk/27.0.12077973 && \
-cd /path/to/deepfilter_test/flutter_app/rust_builder && \
+cd flutter_app/rust_builder && \
 cargo ndk -t arm64-v8a build --release && \
-cp target/aarch64-linux-android/release/librust_lib_deepfilter_test.so ../android/app/src/main/jniLibs/arm64-v8a/ && \
-cd .. && \
-flutter build apk --debug
+cp target/aarch64-linux-android/release/librust_lib_deepfilter_test.so \
+   ../android/app/src/main/jniLibs/arm64-v8a/ && \
+cd .. && flutter build apk --debug
 ```
 
-## How It Works
+## Architecture
 
-1. **Model Loading**: DeepFilterNet3 ONNX model loaded from Flutter assets on startup
-2. **Recording**: Captures audio using Oboe (Android) with i16 format for device compatibility
-3. **Processing**: After recording stops, audio is passed through DeepFilterNet3 for noise suppression
-4. **Saving**: Processed audio is saved as a 48kHz mono WAV file
-5. **Playback**: Plays back the denoised recording via Oboe output stream
+### ONNX Runtime Integration
+
+The app uses ONNX Runtime with dynamic loading (`load-dynamic` feature):
+
+1. **libonnxruntime.so** (19MB) is downloaded from Maven and included in jniLibs
+2. At runtime, `ort::init_from("libonnxruntime.so")` loads the library
+3. ONNX Runtime automatically uses NNAPI if available (GPU/NPU acceleration)
+
+**Version compatibility:**
+| ort crate | ONNX Runtime |
+|-----------|--------------|
+| 2.0.0-rc.11 | 1.23.x |
+| 1.16.x | 1.16.x |
+
+### DeepFilterNet3 Pipeline
+
+The model archive contains three ONNX models:
+- `enc.onnx` - Encoder network
+- `erb_dec.onnx` - ERB (Equivalent Rectangular Bandwidth) decoder
+- `df_dec.onnx` - Deep Filtering decoder
+
+Processing flow:
+1. FFT → ERB features → Encoder
+2. ERB Decoder → Gain mask
+3. DF Decoder → Filter coefficients
+4. Apply gains and DF → IFFT → Output
+
+### Thread Safety
+
+- Global `Mutex<Option<T>>` storage for recorder/player
+- ONNX Runtime sessions are thread-safe
+- `unsafe impl Send` for Android-specific types (Oboe streams)
 
 ## Audio Configuration
 
 - Sample rate: 48000 Hz
 - Channels: Mono (1)
 - Frame size: 480 samples (10ms)
-- Format: 16-bit PCM (i16) for Oboe, converted to f32 for processing
-- Output: 16-bit PCM WAV files
+- Format: 16-bit PCM (i16) for Oboe, f32 internally
 
-## Architecture Notes
+## Key Dependencies
 
-### Thread Safety
+| Crate | Purpose |
+|-------|---------|
+| `ort` | ONNX Runtime Rust bindings (with NNAPI) |
+| `df` | DeepFilterNet signal processing |
+| `oboe` | Android audio I/O |
+| `flutter_rust_bridge` | Dart-Rust FFI |
 
-The Rust API uses global `Mutex<Option<T>>` storage for the recorder and player to handle Flutter-Rust bridge's potential cross-thread calls. The DeepFilter model itself is not thread-safe (uses `Rc` internally), so it's created fresh when needed for processing.
+## Cargo.toml Configuration
 
-### Android-Specific
+```toml
+# ONNX Runtime with dynamic loading
+ort = { version = "2.0.0-rc.9", features = ["ndarray", "load-dynamic"] }
 
-- Uses Oboe with `PerformanceMode::None` and `SharingMode::Shared` for better Samsung device compatibility
-- Audio streams use i16 format (better device support) with f32 conversion in callbacks
-- Stream lifecycle is managed via callback return values (`DataCallbackResult::Stop`)
+# DeepFilterNet - transforms only (signal processing)
+df = { features = ["transforms", "logging"] }
+```
 
 ## Troubleshooting
 
-### "Recorder not found" error
-This was caused by thread-local storage being inaccessible across threads. Fixed by using global Mutex storage.
+### "dlopen failed" / "Failed to initialize ONNX Runtime"
+- Ensure `libonnxruntime.so` is in jniLibs for your target architecture
+- Use full library name: `ort::init_from("libonnxruntime.so")`
 
-### Build fails with "linker not found"
-Ensure `ANDROID_NDK_HOME` is set correctly and the NDK is installed.
+### "ort is not compatible with ONNX Runtime binary"
+- Version mismatch - ort 2.0.0-rc.11 requires ONNX Runtime 1.23.x
+- Download correct version from Maven
 
-### Permission denied on recording
-App requires `RECORD_AUDIO` permission. Check AndroidManifest.xml and grant permission in device settings.
+### "protobuf parsing failed"
+- Check for macOS `._` metadata files in tar archive
+- Code now skips files starting with `._`
 
-## Files Modified During Development
+### "Failed to parse config.ini" / "stream did not contain valid UTF-8"
+- Fixed by reading to bytes first, then using `from_utf8_lossy()`
 
-Key files that were created or significantly modified:
-- `rust/src/api/audio_engine.rs` - Main API with global state management
-- `rust/src/audio/recorder.rs` - Oboe-based audio recording
-- `rust/src/audio/player.rs` - Oboe-based audio playback
-- `rust/src/processing/deepfilter.rs` - DeepFilterNet wrapper
-- `flutter_app/lib/main.dart` - Flutter UI
-- `flutter_app/rust_builder/src/api.rs` - FRB wrapper API
+### "Recorder not found"
+- Fixed by using global Mutex storage instead of thread_local
+
+### NNAPI not being used
+- NNAPI availability depends on device and Android version (8.1+)
+- Check logcat for ONNX Runtime execution provider messages
+
+## Development Notes
+
+### Model Archive Format
+The DeepFilterNet3 mobile model (`DeepFilterNet3_onnx_mobile.tar.gz`) contains:
+- `config.ini` - Model configuration
+- `enc.onnx`, `erb_dec.onnx`, `df_dec.onnx` - ONNX models
+- `._*` files - macOS metadata (skipped during extraction)
+
+### Key Files
+- `rust/src/processing/deepfilter.rs` - ONNX Runtime session management
+- `rust/src/api/audio_engine.rs` - Thread-safe Flutter API
+- `rust/src/audio/recorder.rs` - Oboe audio recording
+- `rust/src/audio/player.rs` - Oboe audio playback
+
+## License
+
+MIT
