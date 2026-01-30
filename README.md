@@ -9,6 +9,18 @@ Flutter app with Rust audio core to test DeepFilterNet3 noise suppression on And
 - Oboe-based audio recording/playback for low latency
 - Post-recording noise filtering with WAV output
 - **Dual parallel stream processing** with runtime enable/disable control
+- **Real-time CPU/GPU metrics** display in UI
+- **NNAPI status indicator** - shows if GPU acceleration is active
+
+## Current Status
+
+- ✅ Recording/playback working
+- ✅ Dual stream architecture implemented
+- ✅ NNAPI integration added (may not be available on all devices)
+- ✅ CPU metrics from /proc/stat
+- ⚠️ GPU metrics device-specific (N/A on many devices)
+- ⚠️ DeepFilter inference is passthrough (TODO: implement actual processing)
+- ⚠️ Dual streams use same mic input (intended for two callers)
 
 ## Project Structure
 
@@ -205,11 +217,33 @@ This enables A/B testing of DeepFilter with instant switching.
 ## Cargo.toml Configuration
 
 ```toml
-# ONNX Runtime with dynamic loading
-ort = { version = "2.0.0-rc.9", features = ["ndarray", "load-dynamic"] }
+# ONNX Runtime with dynamic loading + NNAPI
+ort = { version = "2.0.0-rc.9", features = ["ndarray", "load-dynamic", "nnapi"] }
 
 # DeepFilterNet - transforms only (signal processing)
 df = { features = ["transforms", "logging"] }
+```
+
+## Quick Build Commands
+
+```bash
+# Full rebuild and deploy
+source ~/.cargo/env && \
+export ANDROID_NDK_HOME=/opt/android-sdk/ndk/27.0.12077973 && \
+cd flutter_app/rust_builder && \
+cargo ndk -t arm64-v8a build --release && \
+cp target/aarch64-linux-android/release/librust_lib_deepfilter_test.so \
+   ../android/app/src/main/jniLibs/arm64-v8a/ && \
+cd .. && flutter build apk --debug
+
+# Copy to web server (adjust path as needed)
+sudo cp build/app/outputs/flutter-apk/app-debug.apk /root/simple/web/shimon/
+
+# Check NNAPI status via logcat
+adb logcat | grep -iE "nnapi|onnxruntime|deepfilter"
+
+# Monitor CPU usage
+adb shell "while true; do cat /proc/stat | head -1; sleep 1; done"
 ```
 
 ## Troubleshooting
@@ -235,6 +269,14 @@ df = { features = ["transforms", "logging"] }
 ### NNAPI not being used
 - NNAPI availability depends on device and Android version (8.1+)
 - Check logcat for ONNX Runtime execution provider messages
+- App shows actual NNAPI registration status in UI
+
+### CPU/GPU metrics showing N/A
+- CPU: Should work on all Android devices (reads /proc/stat)
+- GPU: Device-specific sysfs paths, may not be available
+  - Qualcomm: `/sys/class/kgsl/kgsl-3d0/gpubusy`
+  - Mali: `/sys/devices/platform/*.mali/utilization`
+- First read may show 0% (needs delta calculation)
 
 ## Development Notes
 
@@ -249,6 +291,19 @@ The DeepFilterNet3 mobile model (`DeepFilterNet3_onnx_mobile.tar.gz`) contains:
 - `rust/src/api/audio_engine.rs` - Thread-safe Flutter API
 - `rust/src/audio/recorder.rs` - Oboe audio recording
 - `rust/src/audio/player.rs` - Oboe audio playback
+
+## TODO
+
+### High Priority
+- [ ] Implement actual DeepFilter ONNX inference in `process_frame()`
+- [ ] Record multiple files: raw, filtered-A, filtered-B for comparison
+- [ ] Separate streams for two callers (local mic vs remote audio)
+
+### Future Enhancements
+- [ ] Real-time audio processing during recording (not just post-processing)
+- [ ] Visualize audio waveform/spectrum
+- [ ] A/B comparison playback UI
+- [ ] Export processing benchmarks
 
 ## License
 
