@@ -197,15 +197,18 @@ impl SharedSessions {
         #[cfg(target_os = "android")]
         let builder = {
             use ort::execution_providers::NNAPIExecutionProvider;
+            use crate::api::metrics::set_nnapi_registered;
 
             let nnapi = NNAPIExecutionProvider::default();
             match builder.with_execution_providers([nnapi.build()]) {
                 Ok(b) => {
                     log::info!("NNAPI execution provider registered for {}", name);
+                    set_nnapi_registered(true);
                     b
                 }
                 Err(e) => {
                     log::warn!("Failed to register NNAPI for {}: {} - falling back to CPU", name, e);
+                    set_nnapi_registered(false);
                     // Re-create builder without NNAPI
                     Session::builder()
                         .map_err(|e| anyhow::anyhow!("Session builder failed for {}: {}", name, e))?

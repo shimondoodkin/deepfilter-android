@@ -1,10 +1,19 @@
 use std::fs;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use flutter_rust_bridge::frb;
 
 /// CPU times from /proc/stat
 static PREV_TOTAL: AtomicU64 = AtomicU64::new(0);
 static PREV_IDLE: AtomicU64 = AtomicU64::new(0);
+
+/// Track if NNAPI was successfully registered (set by deepfilter.rs)
+pub static NNAPI_REGISTERED: AtomicBool = AtomicBool::new(false);
+
+/// Set NNAPI registration status
+pub fn set_nnapi_registered(registered: bool) {
+    NNAPI_REGISTERED.store(registered, Ordering::SeqCst);
+    log::info!("NNAPI registered status set to: {}", registered);
+}
 
 /// System metrics for UI display
 #[frb]
@@ -155,21 +164,8 @@ fn get_gpu_usage() -> f32 {
     -1.0 // Unsupported or not available
 }
 
-/// Check if NNAPI is available on this device
+/// Check if NNAPI was successfully registered
 fn check_nnapi_available() -> bool {
-    #[cfg(target_os = "android")]
-    {
-        // NNAPI is available on Android 8.1+ (API 27+)
-        // We can check by trying to read android.os.Build.VERSION.SDK_INT
-        // but for simplicity, just check if the NNAPI driver exists
-        std::path::Path::new("/vendor/lib64/libneuralnetworks.so").exists()
-            || std::path::Path::new("/system/lib64/libneuralnetworks.so").exists()
-            || std::path::Path::new("/vendor/lib/libneuralnetworks.so").exists()
-            || std::path::Path::new("/system/lib/libneuralnetworks.so").exists()
-    }
-
-    #[cfg(not(target_os = "android"))]
-    {
-        false
-    }
+    // Return the actual registration status from model loading
+    NNAPI_REGISTERED.load(Ordering::SeqCst)
 }
