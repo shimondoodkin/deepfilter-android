@@ -18,7 +18,7 @@ flutter_rust_bridge = "2"
 df = { git = "https://github.com/Rikorose/DeepFilterNet.git", tag = "v0.5.6", package = "deep_filter", default-features = false, features = ["transforms", "logging"] }
 
 # ONNX Runtime - use load-dynamic to load libonnxruntime.so at runtime
-ort = { version = "2.0.0-rc.9", default-features = false, features = ["ndarray", "load-dynamic"] }
+ort = { version = "2.0.0-rc.9", default-features = false, features = ["ndarray", "load-dynamic", "nnapi"] }
 
 # Audio file I/O
 hound = "3.5"

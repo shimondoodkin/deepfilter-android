@@ -222,6 +222,17 @@ class RustLibWire implements BaseWire {
   late final _wire__crate__api__get_status = _wire__crate__api__get_statusPtr
       .asFunction<void Function(int)>();
 
+  void wire__crate__api__get_system_metrics(int port_) {
+    return _wire__crate__api__get_system_metrics(port_);
+  }
+
+  late final _wire__crate__api__get_system_metricsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+        'frbgen_deepfilter_test_wire__crate__api__get_system_metrics',
+      );
+  late final _wire__crate__api__get_system_metrics =
+      _wire__crate__api__get_system_metricsPtr.asFunction<void Function(int)>();
+
   void wire__crate__api__init_engine(
     int port_,
     ffi.Pointer<wire_cst_list_prim_u_8_loose> model_data,

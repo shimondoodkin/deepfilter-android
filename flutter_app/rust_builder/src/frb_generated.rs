@@ -62,6 +62,23 @@ fn wire__crate__api__get_status_impl(port_: flutter_rust_bridge::for_generated::
         },
     )
 }
+fn wire__crate__api__get_system_metrics_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_system_metrics",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::get_system_metrics())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__init_engine_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     model_data: impl CstDecode<Vec<u8>>,
@@ -397,6 +414,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::RecordingStatus {
             self.is_recording.into_into_dart().into_dart(),
             self.is_playing.into_into_dart().into_dart(),
             self.duration_ms.into_into_dart().into_dart(),
+            self.stream_a_enabled.into_into_dart().into_dart(),
+            self.stream_b_enabled.into_into_dart().into_dart(),
             self.error.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -407,6 +426,26 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::RecordingStatus>
     for crate::api::RecordingStatus
 {
     fn into_into_dart(self) -> crate::api::RecordingStatus {
+        self
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::SystemMetrics {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.cpu_usage_percent.into_into_dart().into_dart(),
+            self.gpu_usage_percent.into_into_dart().into_dart(),
+            self.nnapi_available.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::SystemMetrics {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::SystemMetrics>
+    for crate::api::SystemMetrics
+{
+    fn into_into_dart(self) -> crate::api::SystemMetrics {
         self
     }
 }
@@ -454,6 +493,22 @@ impl SseEncode for crate::api::RecordingStatus {
         <bool>::sse_encode(self.stream_a_enabled, serializer);
         <bool>::sse_encode(self.stream_b_enabled, serializer);
         <Option<String>>::sse_encode(self.error, serializer);
+    }
+}
+
+impl SseEncode for crate::api::SystemMetrics {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <f32>::sse_encode(self.cpu_usage_percent, serializer);
+        <f32>::sse_encode(self.gpu_usage_percent, serializer);
+        <bool>::sse_encode(self.nnapi_available, serializer);
+    }
+}
+
+impl SseEncode for f32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_f32::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -562,6 +617,11 @@ mod io {
     #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__get_status(port_: i64) {
         wire__crate__api__get_status_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__get_system_metrics(port_: i64) {
+        wire__crate__api__get_system_metrics_impl(port_)
     }
 
     #[unsafe(no_mangle)]

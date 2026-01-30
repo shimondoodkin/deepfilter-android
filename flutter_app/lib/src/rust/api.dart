@@ -49,6 +49,38 @@ Future<bool> isStreamAEnabled() =>
 Future<bool> isStreamBEnabled() =>
     RustLib.instance.api.crateApiIsStreamBEnabled();
 
+/// Get current system metrics (CPU/GPU usage)
+Future<SystemMetrics> getSystemMetrics() =>
+    RustLib.instance.api.crateApiGetSystemMetrics();
+
+/// System metrics for UI display
+class SystemMetrics {
+  final double cpuUsagePercent;
+  final double gpuUsagePercent;
+  final bool nnapiAvailable;
+
+  const SystemMetrics({
+    required this.cpuUsagePercent,
+    required this.gpuUsagePercent,
+    required this.nnapiAvailable,
+  });
+
+  @override
+  int get hashCode =>
+      cpuUsagePercent.hashCode ^
+      gpuUsagePercent.hashCode ^
+      nnapiAvailable.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemMetrics &&
+          runtimeType == other.runtimeType &&
+          cpuUsagePercent == other.cpuUsagePercent &&
+          gpuUsagePercent == other.gpuUsagePercent &&
+          nnapiAvailable == other.nnapiAvailable;
+}
+
 /// Recording status for UI updates
 class RecordingStatus {
   final bool isRecording;

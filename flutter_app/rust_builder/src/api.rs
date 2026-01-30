@@ -92,3 +92,26 @@ pub fn get_status() -> RecordingStatus {
 pub fn is_playback_finished() -> bool {
     deepfilter_audio::api::is_playback_finished()
 }
+
+/// System metrics for UI display
+pub struct SystemMetrics {
+    pub cpu_usage_percent: f32,
+    pub gpu_usage_percent: f32,
+    pub nnapi_available: bool,
+}
+
+impl From<deepfilter_audio::api::SystemMetrics> for SystemMetrics {
+    fn from(m: deepfilter_audio::api::SystemMetrics) -> Self {
+        Self {
+            cpu_usage_percent: m.cpu_usage_percent,
+            gpu_usage_percent: m.gpu_usage_percent,
+            nnapi_available: m.nnapi_available,
+        }
+    }
+}
+
+/// Get current system metrics (CPU/GPU usage)
+#[frb]
+pub fn get_system_metrics() -> SystemMetrics {
+    deepfilter_audio::api::get_system_metrics().into()
+}

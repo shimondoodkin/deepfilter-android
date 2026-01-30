@@ -46,6 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _statusTimer;
   bool _streamAEnabled = true;
   bool _streamBEnabled = true;
+  double _cpuUsage = -1;
+  double _gpuUsage = -1;
+  bool _nnapiAvailable = false;
 
   @override
   void initState() {
@@ -81,6 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isInitialized = true;
         _statusText = 'Ready to record';
+      });
+
+      // Start metrics update timer
+      _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+        _updateStatus();
       });
     } catch (e) {
       setState(() {
@@ -187,10 +195,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void _updateStatus() async {
     try {
       final status = await getStatus();
+      final metrics = await getSystemMetrics();
       setState(() {
         _recordingDuration = status.durationMs.toInt();
         _streamAEnabled = status.streamAEnabled;
         _streamBEnabled = status.streamBEnabled;
+        _cpuUsage = metrics.cpuUsagePercent;
+        _gpuUsage = metrics.gpuUsagePercent;
+        _nnapiAvailable = metrics.nnapiAvailable;
       });
     } catch (e) {
       // Ignore status update errors
@@ -229,6 +241,31 @@ class _HomeScreenState extends State<HomeScreen> {
     final secs = seconds % 60;
     final millis = (ms % 1000) ~/ 100;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}.$millis';
+  }
+
+  Widget _buildMetricColumn(String label, String value, double progress, Color color) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: 60,
+          height: 60,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                strokeWidth: 6,
+                backgroundColor: Colors.grey.shade300,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+              Text(value, style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -385,6 +422,56 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey,
                           ),
                           textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // System Metrics
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'System Metrics',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildMetricColumn(
+                              'CPU',
+                              _cpuUsage >= 0 ? '${_cpuUsage.toStringAsFixed(1)}%' : 'N/A',
+                              _cpuUsage >= 0 ? _cpuUsage / 100 : 0,
+                              Colors.blue,
+                            ),
+                            _buildMetricColumn(
+                              'GPU',
+                              _gpuUsage >= 0 ? '${_gpuUsage.toStringAsFixed(1)}%' : 'N/A',
+                              _gpuUsage >= 0 ? _gpuUsage / 100 : 0,
+                              Colors.green,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _nnapiAvailable ? Icons.check_circle : Icons.cancel,
+                              color: _nnapiAvailable ? Colors.green : Colors.red,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'NNAPI: ${_nnapiAvailable ? "Available" : "Not Available"}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ),
                       ],
                     ),

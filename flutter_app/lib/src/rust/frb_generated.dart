@@ -77,6 +77,8 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 abstract class RustLibApi extends BaseApi {
   Future<RecordingStatus> crateApiGetStatus();
 
+  Future<SystemMetrics> crateApiGetSystemMetrics();
+
   Future<void> crateApiInitEngine({required List<int> modelData});
 
   Future<bool> crateApiIsPlaybackFinished();
@@ -126,6 +128,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiGetStatusConstMeta =>
       const TaskConstMeta(debugName: "get_status", argNames: []);
+
+  @override
+  Future<SystemMetrics> crateApiGetSystemMetrics() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          return wire.wire__crate__api__get_system_metrics(port_);
+        },
+        codec: DcoCodec(
+          decodeSuccessData: dco_decode_system_metrics,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiGetSystemMetricsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiGetSystemMetricsConstMeta =>
+      const TaskConstMeta(debugName: "get_system_metrics", argNames: []);
 
   @override
   Future<void> crateApiInitEngine({required List<int> modelData}) {
@@ -388,6 +411,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       streamBEnabled: dco_decode_bool(arr[4]),
       error: dco_decode_opt_String(arr[5]),
     );
+  }
+
+  @protected
+  SystemMetrics dco_decode_system_metrics(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return SystemMetrics(
+      cpuUsagePercent: dco_decode_f_32(arr[0]),
+      gpuUsagePercent: dco_decode_f_32(arr[1]),
+      nnapiAvailable: dco_decode_bool(arr[2]),
+    );
+  }
+
+  @protected
+  double dco_decode_f_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
   }
 
   @protected

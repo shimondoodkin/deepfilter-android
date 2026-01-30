@@ -190,8 +190,28 @@ impl SharedSessions {
     fn create_session(model_bytes: &[u8], name: &str) -> Result<Session> {
         log::info!("Creating ONNX session for {} ({} bytes)", name, model_bytes.len());
 
-        let builder = Session::builder()
+        let mut builder = Session::builder()
             .map_err(|e| anyhow::anyhow!("Session builder failed for {}: {}", name, e))?;
+
+        // Try to use NNAPI on Android for GPU/NPU acceleration
+        #[cfg(target_os = "android")]
+        let builder = {
+            use ort::execution_providers::NNAPIExecutionProvider;
+
+            let nnapi = NNAPIExecutionProvider::default();
+            match builder.with_execution_providers([nnapi.build()]) {
+                Ok(b) => {
+                    log::info!("NNAPI execution provider registered for {}", name);
+                    b
+                }
+                Err(e) => {
+                    log::warn!("Failed to register NNAPI for {}: {} - falling back to CPU", name, e);
+                    // Re-create builder without NNAPI
+                    Session::builder()
+                        .map_err(|e| anyhow::anyhow!("Session builder failed for {}: {}", name, e))?
+                }
+            }
+        };
 
         let builder = builder.with_optimization_level(GraphOptimizationLevel::Level1)
             .map_err(|e| anyhow::anyhow!("Optimization level failed for {}: {}", name, e))?;
