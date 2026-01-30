@@ -39,72 +39,42 @@ pub fn get_system_metrics() -> SystemMetrics {
 
 /// Calculate CPU usage from /proc/stat
 fn get_cpu_usage() -> f32 {
-    #[cfg(target_os = "android")]
-    {
-        if let Ok(stat) = fs::read_to_string("/proc/stat") {
-            if let Some(cpu_line) = stat.lines().next() {
-                let parts: Vec<&str> = cpu_line.split_whitespace().collect();
-                if parts.len() >= 5 && parts[0] == "cpu" {
-                    // cpu user nice system idle iowait irq softirq
-                    let user: u64 = parts[1].parse().unwrap_or(0);
-                    let nice: u64 = parts[2].parse().unwrap_or(0);
-                    let system: u64 = parts[3].parse().unwrap_or(0);
-                    let idle: u64 = parts[4].parse().unwrap_or(0);
-                    let iowait: u64 = parts.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-                    let irq: u64 = parts.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
-                    let softirq: u64 = parts.get(7).and_then(|s| s.parse().ok()).unwrap_or(0);
+    // Works on both Android and Linux
+    if let Ok(stat) = fs::read_to_string("/proc/stat") {
+        if let Some(cpu_line) = stat.lines().next() {
+            let parts: Vec<&str> = cpu_line.split_whitespace().collect();
+            if parts.len() >= 5 && parts[0] == "cpu" {
+                // cpu user nice system idle iowait irq softirq
+                let user: u64 = parts[1].parse().unwrap_or(0);
+                let nice: u64 = parts[2].parse().unwrap_or(0);
+                let system: u64 = parts[3].parse().unwrap_or(0);
+                let idle: u64 = parts[4].parse().unwrap_or(0);
+                let iowait: u64 = parts.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+                let irq: u64 = parts.get(6).and_then(|s| s.parse().ok()).unwrap_or(0);
+                let softirq: u64 = parts.get(7).and_then(|s| s.parse().ok()).unwrap_or(0);
 
-                    let total = user + nice + system + idle + iowait + irq + softirq;
-                    let idle_total = idle + iowait;
+                let total = user + nice + system + idle + iowait + irq + softirq;
+                let idle_total = idle + iowait;
 
-                    let prev_total = PREV_TOTAL.swap(total, Ordering::SeqCst);
-                    let prev_idle = PREV_IDLE.swap(idle_total, Ordering::SeqCst);
+                let prev_total = PREV_TOTAL.swap(total, Ordering::SeqCst);
+                let prev_idle = PREV_IDLE.swap(idle_total, Ordering::SeqCst);
 
-                    if prev_total > 0 {
-                        let total_diff = total.saturating_sub(prev_total);
-                        let idle_diff = idle_total.saturating_sub(prev_idle);
+                if prev_total > 0 {
+                    let total_diff = total.saturating_sub(prev_total);
+                    let idle_diff = idle_total.saturating_sub(prev_idle);
 
-                        if total_diff > 0 {
-                            let usage = 100.0 * (1.0 - (idle_diff as f32 / total_diff as f32));
-                            return usage.clamp(0.0, 100.0);
-                        }
+                    if total_diff > 0 {
+                        let usage = 100.0 * (1.0 - (idle_diff as f32 / total_diff as f32));
+                        return usage.clamp(0.0, 100.0);
                     }
+                } else {
+                    // First read - return 0 instead of -1, next read will have delta
+                    return 0.0;
                 }
             }
         }
-    }
-
-    #[cfg(not(target_os = "android"))]
-    {
-        // Desktop: try /proc/stat (Linux) or return -1 for unsupported
-        if let Ok(stat) = fs::read_to_string("/proc/stat") {
-            if let Some(cpu_line) = stat.lines().next() {
-                let parts: Vec<&str> = cpu_line.split_whitespace().collect();
-                if parts.len() >= 5 && parts[0] == "cpu" {
-                    let user: u64 = parts[1].parse().unwrap_or(0);
-                    let nice: u64 = parts[2].parse().unwrap_or(0);
-                    let system: u64 = parts[3].parse().unwrap_or(0);
-                    let idle: u64 = parts[4].parse().unwrap_or(0);
-                    let iowait: u64 = parts.get(5).and_then(|s| s.parse().ok()).unwrap_or(0);
-
-                    let total = user + nice + system + idle + iowait;
-                    let idle_total = idle + iowait;
-
-                    let prev_total = PREV_TOTAL.swap(total, Ordering::SeqCst);
-                    let prev_idle = PREV_IDLE.swap(idle_total, Ordering::SeqCst);
-
-                    if prev_total > 0 {
-                        let total_diff = total.saturating_sub(prev_total);
-                        let idle_diff = idle_total.saturating_sub(prev_idle);
-
-                        if total_diff > 0 {
-                            let usage = 100.0 * (1.0 - (idle_diff as f32 / total_diff as f32));
-                            return usage.clamp(0.0, 100.0);
-                        }
-                    }
-                }
-            }
-        }
+    } else {
+        log::warn!("Failed to read /proc/stat for CPU usage");
     }
 
     -1.0 // Unsupported

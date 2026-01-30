@@ -415,6 +415,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
+              const SizedBox(height: 16),
+
+              // Info text (moved here, below buttons)
+              Text(
+                'Audio is processed with DeepFilterNet3\nfor real-time noise suppression',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
               const SizedBox(height: 32),
 
               // Stream controls
@@ -509,14 +520,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Info text
-              Text(
-                'Audio is processed with DeepFilterNet3\nfor real-time noise suppression',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              // Bottom padding for navigation bar
+              const SizedBox(height: 100),
             ],
           ),
         ),
