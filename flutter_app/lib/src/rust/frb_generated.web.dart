@@ -27,6 +27,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  double dco_decode_f_32(dynamic raw);
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
   @protected
@@ -37,6 +40,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RecordingStatus dco_decode_recording_status(dynamic raw);
+
+  @protected
+  SystemMetrics dco_decode_system_metrics(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -54,6 +60,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  double sse_decode_f_32(SseDeserializer deserializer);
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
 
   @protected
@@ -64,6 +73,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RecordingStatus sse_decode_recording_status(SseDeserializer deserializer);
+
+  @protected
+  SystemMetrics sse_decode_system_metrics(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -108,7 +120,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       cst_encode_bool(raw.isRecording),
       cst_encode_bool(raw.isPlaying),
       cst_encode_u_64(raw.durationMs),
+      cst_encode_bool(raw.streamAEnabled),
+      cst_encode_bool(raw.streamBEnabled),
       cst_encode_opt_String(raw.error),
+    ].jsify()!;
+  }
+
+  @protected
+  JSAny cst_encode_system_metrics(SystemMetrics raw) {
+    // Codec=Cst (C-struct based), see doc to use other codecs
+    return [
+      cst_encode_f_32(raw.cpuUsagePercent),
+      cst_encode_f_32(raw.gpuUsagePercent),
+      cst_encode_bool(raw.nnapiAvailable),
     ].jsify()!;
   }
 
@@ -122,6 +146,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool cst_encode_bool(bool raw);
 
   @protected
+  double cst_encode_f_32(double raw);
+
+  @protected
   int cst_encode_u_8(int raw);
 
   @protected
@@ -132,6 +159,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_f_32(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -150,6 +180,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     RecordingStatus self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_system_metrics(SystemMetrics self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);
@@ -172,11 +205,30 @@ class RustLibWire implements BaseWire {
   void wire__crate__api__get_status(NativePortType port_) =>
       wasmModule.wire__crate__api__get_status(port_);
 
+  void wire__crate__api__get_system_metrics(NativePortType port_) =>
+      wasmModule.wire__crate__api__get_system_metrics(port_);
+
   void wire__crate__api__init_engine(NativePortType port_, JSAny model_data) =>
       wasmModule.wire__crate__api__init_engine(port_, model_data);
 
   void wire__crate__api__is_playback_finished(NativePortType port_) =>
       wasmModule.wire__crate__api__is_playback_finished(port_);
+
+  void wire__crate__api__is_stream_a_enabled(NativePortType port_) =>
+      wasmModule.wire__crate__api__is_stream_a_enabled(port_);
+
+  void wire__crate__api__is_stream_b_enabled(NativePortType port_) =>
+      wasmModule.wire__crate__api__is_stream_b_enabled(port_);
+
+  void wire__crate__api__set_stream_a_enabled(
+    NativePortType port_,
+    bool enabled,
+  ) => wasmModule.wire__crate__api__set_stream_a_enabled(port_, enabled);
+
+  void wire__crate__api__set_stream_b_enabled(
+    NativePortType port_,
+    bool enabled,
+  ) => wasmModule.wire__crate__api__set_stream_b_enabled(port_, enabled);
 
   void wire__crate__api__start_playback(
     NativePortType port_,
@@ -203,12 +255,28 @@ external RustLibWasmModule get wasmModule;
 extension type RustLibWasmModule._(JSObject _) implements JSObject {
   external void wire__crate__api__get_status(NativePortType port_);
 
+  external void wire__crate__api__get_system_metrics(NativePortType port_);
+
   external void wire__crate__api__init_engine(
     NativePortType port_,
     JSAny model_data,
   );
 
   external void wire__crate__api__is_playback_finished(NativePortType port_);
+
+  external void wire__crate__api__is_stream_a_enabled(NativePortType port_);
+
+  external void wire__crate__api__is_stream_b_enabled(NativePortType port_);
+
+  external void wire__crate__api__set_stream_a_enabled(
+    NativePortType port_,
+    bool enabled,
+  );
+
+  external void wire__crate__api__set_stream_b_enabled(
+    NativePortType port_,
+    bool enabled,
+  );
 
   external void wire__crate__api__start_playback(
     NativePortType port_,

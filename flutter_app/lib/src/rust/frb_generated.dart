@@ -64,7 +64,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1059426705;
+  int get rustContentHash => 336376123;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -254,8 +254,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiSetStreamAEnabledConstMeta =>
-      const TaskConstMeta(debugName: "set_stream_a_enabled", argNames: ["enabled"]);
+  TaskConstMeta get kCrateApiSetStreamAEnabledConstMeta => const TaskConstMeta(
+    debugName: "set_stream_a_enabled",
+    argNames: ["enabled"],
+  );
 
   @override
   Future<void> crateApiSetStreamBEnabled({required bool enabled}) {
@@ -276,8 +278,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiSetStreamBEnabledConstMeta =>
-      const TaskConstMeta(debugName: "set_stream_b_enabled", argNames: ["enabled"]);
+  TaskConstMeta get kCrateApiSetStreamBEnabledConstMeta => const TaskConstMeta(
+    debugName: "set_stream_b_enabled",
+    argNames: ["enabled"],
+  );
 
   @override
   Future<void> crateApiStartPlayback({required String filePath}) {
@@ -380,6 +384,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double dco_decode_f_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as List<int>;
@@ -427,12 +437,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  double dco_decode_f_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as double;
-  }
-
-  @protected
   BigInt dco_decode_u_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dcoDecodeU64(raw);
@@ -461,6 +465,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  double sse_decode_f_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat32();
   }
 
   @protected
@@ -508,6 +518,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SystemMetrics sse_decode_system_metrics(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_cpuUsagePercent = sse_decode_f_32(deserializer);
+    var var_gpuUsagePercent = sse_decode_f_32(deserializer);
+    var var_nnapiAvailable = sse_decode_bool(deserializer);
+    return SystemMetrics(
+      cpuUsagePercent: var_cpuUsagePercent,
+      gpuUsagePercent: var_gpuUsagePercent,
+      nnapiAvailable: var_nnapiAvailable,
+    );
+  }
+
+  @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getBigUint64();
@@ -537,6 +560,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double cst_encode_f_32(double raw) {
+    // Codec=Cst (C-struct based), see doc to use other codecs
+    return raw;
+  }
+
+  @protected
   int cst_encode_u_8(int raw) {
     // Codec=Cst (C-struct based), see doc to use other codecs
     return raw;
@@ -558,6 +587,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_f_32(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat32(self);
   }
 
   @protected
@@ -604,6 +639,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.streamAEnabled, serializer);
     sse_encode_bool(self.streamBEnabled, serializer);
     sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_system_metrics(SystemMetrics self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_32(self.cpuUsagePercent, serializer);
+    sse_encode_f_32(self.gpuUsagePercent, serializer);
+    sse_encode_bool(self.nnapiAvailable, serializer);
   }
 
   @protected

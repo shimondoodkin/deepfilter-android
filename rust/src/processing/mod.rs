@@ -1,3 +1,3 @@
 mod deepfilter;
 
-pub use deepfilter::{DeepFilter, SharedSessions, StreamProcessor, DfConfig};
+pub use deepfilter::{SharedSessions, StreamProcessor, DfConfig};

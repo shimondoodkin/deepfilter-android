@@ -6,11 +6,28 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`
 
 /// Initialize the audio engine with the DeepFilter model
+/// Creates shared ONNX sessions and two independent stream processors
 Future<void> initEngine({required List<int> modelData}) =>
     RustLib.instance.api.crateApiInitEngine(modelData: modelData);
+
+/// Enable or disable stream A
+Future<void> setStreamAEnabled({required bool enabled}) =>
+    RustLib.instance.api.crateApiSetStreamAEnabled(enabled: enabled);
+
+/// Enable or disable stream B
+Future<void> setStreamBEnabled({required bool enabled}) =>
+    RustLib.instance.api.crateApiSetStreamBEnabled(enabled: enabled);
+
+/// Check if stream A is enabled
+Future<bool> isStreamAEnabled() =>
+    RustLib.instance.api.crateApiIsStreamAEnabled();
+
+/// Check if stream B is enabled
+Future<bool> isStreamBEnabled() =>
+    RustLib.instance.api.crateApiIsStreamBEnabled();
 
 /// Start recording audio to the specified file path
 Future<void> startRecording({required String outputPath}) =>
@@ -33,53 +50,9 @@ Future<RecordingStatus> getStatus() => RustLib.instance.api.crateApiGetStatus();
 Future<bool> isPlaybackFinished() =>
     RustLib.instance.api.crateApiIsPlaybackFinished();
 
-/// Enable or disable stream A
-Future<void> setStreamAEnabled({required bool enabled}) =>
-    RustLib.instance.api.crateApiSetStreamAEnabled(enabled: enabled);
-
-/// Enable or disable stream B
-Future<void> setStreamBEnabled({required bool enabled}) =>
-    RustLib.instance.api.crateApiSetStreamBEnabled(enabled: enabled);
-
-/// Check if stream A is enabled
-Future<bool> isStreamAEnabled() =>
-    RustLib.instance.api.crateApiIsStreamAEnabled();
-
-/// Check if stream B is enabled
-Future<bool> isStreamBEnabled() =>
-    RustLib.instance.api.crateApiIsStreamBEnabled();
-
 /// Get current system metrics (CPU/GPU usage)
 Future<SystemMetrics> getSystemMetrics() =>
     RustLib.instance.api.crateApiGetSystemMetrics();
-
-/// System metrics for UI display
-class SystemMetrics {
-  final double cpuUsagePercent;
-  final double gpuUsagePercent;
-  final bool nnapiAvailable;
-
-  const SystemMetrics({
-    required this.cpuUsagePercent,
-    required this.gpuUsagePercent,
-    required this.nnapiAvailable,
-  });
-
-  @override
-  int get hashCode =>
-      cpuUsagePercent.hashCode ^
-      gpuUsagePercent.hashCode ^
-      nnapiAvailable.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SystemMetrics &&
-          runtimeType == other.runtimeType &&
-          cpuUsagePercent == other.cpuUsagePercent &&
-          gpuUsagePercent == other.gpuUsagePercent &&
-          nnapiAvailable == other.nnapiAvailable;
-}
 
 /// Recording status for UI updates
 class RecordingStatus {
@@ -119,4 +92,32 @@ class RecordingStatus {
           streamAEnabled == other.streamAEnabled &&
           streamBEnabled == other.streamBEnabled &&
           error == other.error;
+}
+
+/// System metrics for UI display
+class SystemMetrics {
+  final double cpuUsagePercent;
+  final double gpuUsagePercent;
+  final bool nnapiAvailable;
+
+  const SystemMetrics({
+    required this.cpuUsagePercent,
+    required this.gpuUsagePercent,
+    required this.nnapiAvailable,
+  });
+
+  @override
+  int get hashCode =>
+      cpuUsagePercent.hashCode ^
+      gpuUsagePercent.hashCode ^
+      nnapiAvailable.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemMetrics &&
+          runtimeType == other.runtimeType &&
+          cpuUsagePercent == other.cpuUsagePercent &&
+          gpuUsagePercent == other.gpuUsagePercent &&
+          nnapiAvailable == other.nnapiAvailable;
 }

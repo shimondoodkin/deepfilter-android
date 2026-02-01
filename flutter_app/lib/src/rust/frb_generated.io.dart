@@ -25,6 +25,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  double dco_decode_f_32(dynamic raw);
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
   @protected
@@ -35,6 +38,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RecordingStatus dco_decode_recording_status(dynamic raw);
+
+  @protected
+  SystemMetrics dco_decode_system_metrics(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -52,6 +58,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  double sse_decode_f_32(SseDeserializer deserializer);
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
 
   @protected
@@ -62,6 +71,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RecordingStatus sse_decode_recording_status(SseDeserializer deserializer);
+
+  @protected
+  SystemMetrics sse_decode_system_metrics(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -129,7 +141,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  void cst_api_fill_to_wire_system_metrics(
+    SystemMetrics apiObj,
+    wire_cst_system_metrics wireObj,
+  ) {
+    wireObj.cpu_usage_percent = cst_encode_f_32(apiObj.cpuUsagePercent);
+    wireObj.gpu_usage_percent = cst_encode_f_32(apiObj.gpuUsagePercent);
+    wireObj.nnapi_available = cst_encode_bool(apiObj.nnapiAvailable);
+  }
+
+  @protected
   bool cst_encode_bool(bool raw);
+
+  @protected
+  double cst_encode_f_32(double raw);
 
   @protected
   int cst_encode_u_8(int raw);
@@ -142,6 +167,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_f_32(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -160,6 +188,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     RecordingStatus self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_system_metrics(SystemMetrics self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);
@@ -266,6 +297,54 @@ class RustLibWire implements BaseWire {
       _wire__crate__api__is_playback_finishedPtr
           .asFunction<void Function(int)>();
 
+  void wire__crate__api__is_stream_a_enabled(int port_) {
+    return _wire__crate__api__is_stream_a_enabled(port_);
+  }
+
+  late final _wire__crate__api__is_stream_a_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+        'frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled',
+      );
+  late final _wire__crate__api__is_stream_a_enabled =
+      _wire__crate__api__is_stream_a_enabledPtr
+          .asFunction<void Function(int)>();
+
+  void wire__crate__api__is_stream_b_enabled(int port_) {
+    return _wire__crate__api__is_stream_b_enabled(port_);
+  }
+
+  late final _wire__crate__api__is_stream_b_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+        'frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled',
+      );
+  late final _wire__crate__api__is_stream_b_enabled =
+      _wire__crate__api__is_stream_b_enabledPtr
+          .asFunction<void Function(int)>();
+
+  void wire__crate__api__set_stream_a_enabled(int port_, bool enabled) {
+    return _wire__crate__api__set_stream_a_enabled(port_, enabled);
+  }
+
+  late final _wire__crate__api__set_stream_a_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+        'frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled',
+      );
+  late final _wire__crate__api__set_stream_a_enabled =
+      _wire__crate__api__set_stream_a_enabledPtr
+          .asFunction<void Function(int, bool)>();
+
+  void wire__crate__api__set_stream_b_enabled(int port_, bool enabled) {
+    return _wire__crate__api__set_stream_b_enabled(port_, enabled);
+  }
+
+  late final _wire__crate__api__set_stream_b_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+        'frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled',
+      );
+  late final _wire__crate__api__set_stream_b_enabled =
+      _wire__crate__api__set_stream_b_enabledPtr
+          .asFunction<void Function(int, bool)>();
+
   void wire__crate__api__start_playback(
     int port_,
     ffi.Pointer<wire_cst_list_prim_u_8_strict> file_path,
@@ -331,52 +410,6 @@ class RustLibWire implements BaseWire {
       );
   late final _wire__crate__api__stop_recording =
       _wire__crate__api__stop_recordingPtr.asFunction<void Function(int)>();
-
-  void wire__crate__api__set_stream_a_enabled(int port_, bool enabled) {
-    return _wire__crate__api__set_stream_a_enabled(port_, enabled);
-  }
-
-  late final _wire__crate__api__set_stream_a_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
-        'frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled',
-      );
-  late final _wire__crate__api__set_stream_a_enabled =
-      _wire__crate__api__set_stream_a_enabledPtr
-          .asFunction<void Function(int, bool)>();
-
-  void wire__crate__api__set_stream_b_enabled(int port_, bool enabled) {
-    return _wire__crate__api__set_stream_b_enabled(port_, enabled);
-  }
-
-  late final _wire__crate__api__set_stream_b_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
-        'frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled',
-      );
-  late final _wire__crate__api__set_stream_b_enabled =
-      _wire__crate__api__set_stream_b_enabledPtr
-          .asFunction<void Function(int, bool)>();
-
-  void wire__crate__api__is_stream_a_enabled(int port_) {
-    return _wire__crate__api__is_stream_a_enabled(port_);
-  }
-
-  late final _wire__crate__api__is_stream_a_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-        'frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled',
-      );
-  late final _wire__crate__api__is_stream_a_enabled =
-      _wire__crate__api__is_stream_a_enabledPtr.asFunction<void Function(int)>();
-
-  void wire__crate__api__is_stream_b_enabled(int port_) {
-    return _wire__crate__api__is_stream_b_enabled(port_);
-  }
-
-  late final _wire__crate__api__is_stream_b_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-        'frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled',
-      );
-  late final _wire__crate__api__is_stream_b_enabled =
-      _wire__crate__api__is_stream_b_enabledPtr.asFunction<void Function(int)>();
 
   ffi.Pointer<wire_cst_list_prim_u_8_loose> cst_new_list_prim_u_8_loose(
     int len,
@@ -459,4 +492,15 @@ final class wire_cst_recording_status extends ffi.Struct {
   external bool stream_b_enabled;
 
   external ffi.Pointer<wire_cst_list_prim_u_8_strict> error;
+}
+
+final class wire_cst_system_metrics extends ffi.Struct {
+  @ffi.Float()
+  external double cpu_usage_percent;
+
+  @ffi.Float()
+  external double gpu_usage_percent;
+
+  @ffi.Bool()
+  external bool nnapi_available;
 }

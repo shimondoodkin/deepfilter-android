@@ -46,6 +46,9 @@ static PLAYER: Mutex<Option<AudioPlayer>> = Mutex::new(None);
 /// Creates shared ONNX sessions and two independent stream processors
 #[frb]
 pub fn init_engine(model_data: Vec<u8>) -> Result<(), String> {
+    // Ensure logging is initialized
+    crate::init_app();
+
     log::info!("Initializing engine with DeepFilter model ({} bytes)", model_data.len());
 
     // Load shared ONNX sessions

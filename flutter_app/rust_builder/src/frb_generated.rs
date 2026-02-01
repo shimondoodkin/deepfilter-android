@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueNom,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1059426705;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 336376123;
 
 // Section: executor
 
@@ -62,7 +62,9 @@ fn wire__crate__api__get_status_impl(port_: flutter_rust_bridge::for_generated::
         },
     )
 }
-fn wire__crate__api__get_system_metrics_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+fn wire__crate__api__get_system_metrics_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "get_system_metrics",
@@ -113,6 +115,86 @@ fn wire__crate__api__is_playback_finished_impl(
             move |context| {
                 transform_result_dco::<_, _, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok(crate::api::is_playback_finished())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__is_stream_a_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "is_stream_a_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_a_enabled())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__is_stream_b_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "is_stream_b_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco::<_, _, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_b_enabled())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__set_stream_a_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    enabled: impl CstDecode<bool>,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_stream_a_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_enabled = enabled.cst_decode();
+            move |context| {
+                transform_result_dco::<_, _, String>((move || {
+                    let output_ok = crate::api::set_stream_a_enabled(api_enabled)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__set_stream_b_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    enabled: impl CstDecode<bool>,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_stream_b_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_enabled = enabled.cst_decode();
+            move |context| {
+                transform_result_dco::<_, _, String>((move || {
+                    let output_ok = crate::api::set_stream_b_enabled(api_enabled)?;
                     Ok(output_ok)
                 })())
             }
@@ -195,92 +277,18 @@ fn wire__crate__api__stop_recording_impl(port_: flutter_rust_bridge::for_generat
         },
     )
 }
-fn wire__crate__api__set_stream_a_enabled_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    enabled: impl CstDecode<bool>,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "set_stream_a_enabled",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let api_enabled = enabled.cst_decode();
-            move |context| {
-                transform_result_dco::<_, _, String>((move || {
-                    let output_ok = crate::api::set_stream_a_enabled(api_enabled)?;
-                    Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__set_stream_b_enabled_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    enabled: impl CstDecode<bool>,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "set_stream_b_enabled",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let api_enabled = enabled.cst_decode();
-            move |context| {
-                transform_result_dco::<_, _, String>((move || {
-                    let output_ok = crate::api::set_stream_b_enabled(api_enabled)?;
-                    Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__is_stream_a_enabled_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "is_stream_a_enabled",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            move |context| {
-                transform_result_dco::<_, _, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_a_enabled())?;
-                    Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__is_stream_b_enabled_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "is_stream_b_enabled",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            move |context| {
-                transform_result_dco::<_, _, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::api::is_stream_b_enabled())?;
-                    Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
 
 // Section: dart2rust
 
 impl CstDecode<bool> for bool {
     // Codec=Cst (C-struct based), see doc to use other codecs
     fn cst_decode(self) -> bool {
+        self
+    }
+}
+impl CstDecode<f32> for f32 {
+    // Codec=Cst (C-struct based), see doc to use other codecs
+    fn cst_decode(self) -> f32 {
         self
     }
 }
@@ -308,6 +316,13 @@ impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u8().unwrap() != 0
+    }
+}
+
+impl SseDecode for f32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_f32::<NativeEndian>().unwrap()
     }
 }
 
@@ -350,6 +365,20 @@ impl SseDecode for crate::api::RecordingStatus {
             stream_a_enabled: var_streamAEnabled,
             stream_b_enabled: var_streamBEnabled,
             error: var_error,
+        };
+    }
+}
+
+impl SseDecode for crate::api::SystemMetrics {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_cpuUsagePercent = <f32>::sse_decode(deserializer);
+        let mut var_gpuUsagePercent = <f32>::sse_decode(deserializer);
+        let mut var_nnapiAvailable = <bool>::sse_decode(deserializer);
+        return crate::api::SystemMetrics {
+            cpu_usage_percent: var_cpuUsagePercent,
+            gpu_usage_percent: var_gpuUsagePercent,
+            nnapi_available: var_nnapiAvailable,
         };
     }
 }
@@ -429,7 +458,6 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::RecordingStatus>
         self
     }
 }
-
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::SystemMetrics {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
@@ -442,9 +470,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::SystemMetrics {
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::SystemMetrics {}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::SystemMetrics>
-    for crate::api::SystemMetrics
-{
+impl flutter_rust_bridge::IntoIntoDart<crate::api::SystemMetrics> for crate::api::SystemMetrics {
     fn into_into_dart(self) -> crate::api::SystemMetrics {
         self
     }
@@ -461,6 +487,13 @@ impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u8(self as _).unwrap();
+    }
+}
+
+impl SseEncode for f32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_f32::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -502,13 +535,6 @@ impl SseEncode for crate::api::SystemMetrics {
         <f32>::sse_encode(self.cpu_usage_percent, serializer);
         <f32>::sse_encode(self.gpu_usage_percent, serializer);
         <bool>::sse_encode(self.nnapi_available, serializer);
-    }
-}
-
-impl SseEncode for f32 {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        serializer.cursor.write_f32::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -596,6 +622,16 @@ mod io {
             }
         }
     }
+    impl CstDecode<crate::api::SystemMetrics> for wire_cst_system_metrics {
+        // Codec=Cst (C-struct based), see doc to use other codecs
+        fn cst_decode(self) -> crate::api::SystemMetrics {
+            crate::api::SystemMetrics {
+                cpu_usage_percent: self.cpu_usage_percent.cst_decode(),
+                gpu_usage_percent: self.gpu_usage_percent.cst_decode(),
+                nnapi_available: self.nnapi_available.cst_decode(),
+            }
+        }
+    }
     impl NewWithNullPtr for wire_cst_recording_status {
         fn new_with_null_ptr() -> Self {
             Self {
@@ -609,6 +645,20 @@ mod io {
         }
     }
     impl Default for wire_cst_recording_status {
+        fn default() -> Self {
+            Self::new_with_null_ptr()
+        }
+    }
+    impl NewWithNullPtr for wire_cst_system_metrics {
+        fn new_with_null_ptr() -> Self {
+            Self {
+                cpu_usage_percent: Default::default(),
+                gpu_usage_percent: Default::default(),
+                nnapi_available: Default::default(),
+            }
+        }
+    }
+    impl Default for wire_cst_system_metrics {
         fn default() -> Self {
             Self::new_with_null_ptr()
         }
@@ -638,6 +688,32 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled(port_: i64) {
+        wire__crate__api__is_stream_a_enabled_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled(port_: i64) {
+        wire__crate__api__is_stream_b_enabled_impl(port_)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled(
+        port_: i64,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_a_enabled_impl(port_, enabled)
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled(
+        port_: i64,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_b_enabled_impl(port_, enabled)
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__start_playback(
         port_: i64,
         file_path: *mut wire_cst_list_prim_u_8_strict,
@@ -661,32 +737,6 @@ mod io {
     #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__stop_recording(port_: i64) {
         wire__crate__api__stop_recording_impl(port_)
-    }
-
-    #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_a_enabled(
-        port_: i64,
-        enabled: bool,
-    ) {
-        wire__crate__api__set_stream_a_enabled_impl(port_, enabled)
-    }
-
-    #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__set_stream_b_enabled(
-        port_: i64,
-        enabled: bool,
-    ) {
-        wire__crate__api__set_stream_b_enabled_impl(port_, enabled)
-    }
-
-    #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_a_enabled(port_: i64) {
-        wire__crate__api__is_stream_a_enabled_impl(port_)
-    }
-
-    #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_deepfilter_test_wire__crate__api__is_stream_b_enabled(port_: i64) {
-        wire__crate__api__is_stream_b_enabled_impl(port_)
     }
 
     #[unsafe(no_mangle)]
@@ -732,6 +782,13 @@ mod io {
         stream_a_enabled: bool,
         stream_b_enabled: bool,
         error: *mut wire_cst_list_prim_u_8_strict,
+    }
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    pub struct wire_cst_system_metrics {
+        cpu_usage_percent: f32,
+        gpu_usage_percent: f32,
+        nnapi_available: bool,
     }
 }
 #[cfg(not(target_family = "wasm"))]
@@ -788,15 +845,38 @@ mod web {
                 .unwrap();
             assert_eq!(
                 self_.length(),
-                4,
-                "Expected 4 elements, got {}",
+                6,
+                "Expected 6 elements, got {}",
                 self_.length()
             );
             crate::api::RecordingStatus {
                 is_recording: self_.get(0).cst_decode(),
                 is_playing: self_.get(1).cst_decode(),
                 duration_ms: self_.get(2).cst_decode(),
-                error: self_.get(3).cst_decode(),
+                stream_a_enabled: self_.get(3).cst_decode(),
+                stream_b_enabled: self_.get(4).cst_decode(),
+                error: self_.get(5).cst_decode(),
+            }
+        }
+    }
+    impl CstDecode<crate::api::SystemMetrics>
+        for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+    {
+        // Codec=Cst (C-struct based), see doc to use other codecs
+        fn cst_decode(self) -> crate::api::SystemMetrics {
+            let self_ = self
+                .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+                .unwrap();
+            assert_eq!(
+                self_.length(),
+                3,
+                "Expected 3 elements, got {}",
+                self_.length()
+            );
+            crate::api::SystemMetrics {
+                cpu_usage_percent: self_.get(0).cst_decode(),
+                gpu_usage_percent: self_.get(1).cst_decode(),
+                nnapi_available: self_.get(2).cst_decode(),
             }
         }
     }
@@ -810,6 +890,12 @@ mod web {
         // Codec=Cst (C-struct based), see doc to use other codecs
         fn cst_decode(self) -> bool {
             self.is_truthy()
+        }
+    }
+    impl CstDecode<f32> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
+        // Codec=Cst (C-struct based), see doc to use other codecs
+        fn cst_decode(self) -> f32 {
+            self.unchecked_into_f64() as _
         }
     }
     impl CstDecode<Vec<u8>> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
@@ -839,6 +925,13 @@ mod web {
     }
 
     #[wasm_bindgen]
+    pub fn wire__crate__api__get_system_metrics(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+    ) {
+        wire__crate__api__get_system_metrics_impl(port_)
+    }
+
+    #[wasm_bindgen]
     pub fn wire__crate__api__init_engine(
         port_: flutter_rust_bridge::for_generated::MessagePort,
         model_data: Box<[u8]>,
@@ -851,6 +944,36 @@ mod web {
         port_: flutter_rust_bridge::for_generated::MessagePort,
     ) {
         wire__crate__api__is_playback_finished_impl(port_)
+    }
+
+    #[wasm_bindgen]
+    pub fn wire__crate__api__is_stream_a_enabled(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+    ) {
+        wire__crate__api__is_stream_a_enabled_impl(port_)
+    }
+
+    #[wasm_bindgen]
+    pub fn wire__crate__api__is_stream_b_enabled(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+    ) {
+        wire__crate__api__is_stream_b_enabled_impl(port_)
+    }
+
+    #[wasm_bindgen]
+    pub fn wire__crate__api__set_stream_a_enabled(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_a_enabled_impl(port_, enabled)
+    }
+
+    #[wasm_bindgen]
+    pub fn wire__crate__api__set_stream_b_enabled(
+        port_: flutter_rust_bridge::for_generated::MessagePort,
+        enabled: bool,
+    ) {
+        wire__crate__api__set_stream_b_enabled_impl(port_, enabled)
     }
 
     #[wasm_bindgen]
